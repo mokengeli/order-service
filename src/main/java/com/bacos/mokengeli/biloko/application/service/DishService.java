@@ -55,7 +55,7 @@ public class DishService {
             throw new ServiceException(errorId, "You can't add item owning by another partener");
         }
         try {
-            return dishPort.saveDish(dish);
+            return dishPort.createDish(dish);
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. {}", e.getTechnicalId(),
                     connectedUser.getEmployeeNumber(), e.getMessage());
@@ -66,7 +66,6 @@ public class DishService {
 
     public List<DomainDish> getAllDishes() throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
-        // TODO How to deal with super user role like admin
         Optional<List<DomainDish>> allDishesByTenant = dishPort.findAllDishesByTenant(connectedUser.getTenantCode());
         return allDishesByTenant.orElseGet(ArrayList::new);
     }

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface DishPort {
-    DomainDish saveDish(DomainDish dish) throws ServiceException;
-
-    Optional<List<DomainDish>> findAllDishesByTenant(String tenantCode);  // Fetch dishes by tenant
+    DomainDish createDish(DomainDish dish) throws ServiceException;
+    Optional<List<DomainDish>> findAllDishesByTenant(String tenantCode);
+    boolean isAllDishesOfTenant(String tenantCode, List<Long> dishIds);
 }

@@ -1,6 +1,8 @@
 package com.bacos.mokengeli.biloko.infrastructure.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
@@ -8,6 +10,8 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "menus")
 public class Menu {
@@ -32,12 +36,6 @@ public class Menu {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @ManyToMany
-    @JoinTable(
-            name = "menu_dishes",
-            schema = "order_service_schema",
-            joinColumns = @JoinColumn(name = "menu_id"),
-            inverseJoinColumns = @JoinColumn(name = "dish_id")
-    )
-    private List<Dish> dishes;
+    @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL)
+    private List<MenuDish> menuDishes;
 }

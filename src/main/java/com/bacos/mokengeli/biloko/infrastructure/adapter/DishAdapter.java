@@ -38,7 +38,7 @@ public class DishAdapter implements DishPort {
 
     @Transactional
     @Override
-    public DomainDish saveDish(DomainDish domainDish) throws ServiceException {
+    public DomainDish createDish(DomainDish domainDish) throws ServiceException {
         Dish dish = DishMapper.toEntity(domainDish);
         String tenantCode = domainDish.getTenantCode();
         TenantContext tenantContext = this.tenantContextRepository.findByTenantCode(tenantCode)
@@ -70,11 +70,15 @@ public class DishAdapter implements DishPort {
     @Override
     public Optional<List<DomainDish>> findAllDishesByTenant(String tenantCode) {
         Optional<List<Dish>> optDish = dishRepository.findByTenantContextTenantCode(tenantCode);
-        List<DomainDish> dishes = new ArrayList<>();
         if (optDish.isEmpty()) {
             return Optional.empty();
         }
         List<DomainDish> domainDishes = optDish.get().stream().map(DishMapper::toDomain).toList();
         return Optional.of(domainDishes);
+    }
+
+    @Override
+    public boolean isAllDishesOfTenant(String tenantCode, List<Long> dishIds) {
+        return this.dishRepository.isAllDishesOfTenant(tenantCode, dishIds, dishIds.size());
     }
 }
