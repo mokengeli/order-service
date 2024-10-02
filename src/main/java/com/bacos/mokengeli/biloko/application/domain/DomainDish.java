@@ -1,15 +1,20 @@
 package com.bacos.mokengeli.biloko.application.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.List;
 
+@Builder
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class DomainDish {
     private Long id;
-    private String tenantCode;  // New field for multi-tenant support
     private String name;
-    private BigDecimal price;
-    private List<DomainArticle> articles;  // List of articles (ingredients) with quantity and unit of measure
+    private Double currentPrice;
+    private String tenantCode;
+    private List<DomainDishArticle> dishArticles;
 }

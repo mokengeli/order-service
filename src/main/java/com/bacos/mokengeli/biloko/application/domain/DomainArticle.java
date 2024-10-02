@@ -1,11 +1,17 @@
 package com.bacos.mokengeli.biloko.application.domain;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Builder
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class DomainArticle {
     private Long id;
     private String name;
-    private double quantity;  // Quantity of the article used
-    private String unitOfMeasure;  // Unit of measure for the article (e.g., "kg", "L")
+    private String unitOfMeasure;
+    private String tenantCode;
 }

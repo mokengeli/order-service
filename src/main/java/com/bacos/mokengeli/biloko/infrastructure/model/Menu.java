@@ -22,6 +22,10 @@ public class Menu {
     @Column(name = "price", nullable = false)
     private Double price;
 
+    @ManyToOne
+    @JoinColumn(name = "tenant_context_id", nullable = false)
+    private TenantContext tenantContext;  // Link to TenantContext
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

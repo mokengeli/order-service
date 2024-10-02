@@ -14,7 +14,7 @@ public class MenuController {
     private final MenuService menuService;
 
     @Autowired
-    public MenuController(MenuService menuService, @RequestHeader("Tenant-Code") String tenantCode) {
+    public MenuController(MenuService menuService) {
         this.menuService = menuService;
     }
 

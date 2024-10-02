@@ -1,11 +1,15 @@
 package com.bacos.mokengeli.biloko.infrastructure.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+@Builder
+@AllArgsConstructor
 @Data
 @NoArgsConstructor
 @Entity
@@ -21,6 +25,10 @@ public class Article {
 
     @Column(name = "unit_of_measure", nullable = false)
     private String unitOfMeasure;
+
+    @ManyToOne
+    @JoinColumn(name = "tenant_context_id", nullable = false)
+    private TenantContext tenantContext;  // Link to TenantContext
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

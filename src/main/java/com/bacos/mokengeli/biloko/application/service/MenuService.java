@@ -25,7 +25,7 @@ public class MenuService {
         menu.setName(request.getName());
         menu.setDishes(request.getDishes());
         menu.setPrice(request.getPrice());
-        menu.setTenantCode(tenantCode);  // Assign tenant code for multi-tenancy
+       // menu.setTenantCode(tenantCode);  // Assign tenant code for multi-tenancy
         return menuPort.saveMenu(menu);
     }
 

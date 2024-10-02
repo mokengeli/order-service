@@ -1,11 +1,9 @@
 package com.bacos.mokengeli.biloko.infrastructure.repository;
 
-import com.bacos.mokengeli.biloko.infrastructure.model.Menu;
+import com.bacos.mokengeli.biloko.infrastructure.model.DishArticle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
-public interface MenuRepository extends JpaRepository<Menu, Long> {
+public interface DishArticleRepository extends JpaRepository<DishArticle, Long> {
 }
