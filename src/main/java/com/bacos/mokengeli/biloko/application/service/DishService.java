@@ -56,8 +56,14 @@ public class DishService {
                     connectedUser.getTenantCode(), dish.getTenantCode());
             throw new ServiceException(errorId, "You can't add item owning by another partener");
         }
+        try {
+            return dishPort.saveDish(dish);
+        } catch (ServiceException e) {
+            log.error("[{}]: User [{}]. {}", e.getTechnicalId(),
+                    connectedUser.getEmployeeNumber(), e.getMessage());
+            throw new ServiceException(e.getTechnicalId(), "Technical Error");
+        }
 
-        return dishPort.saveDish(dish);
     }
 
     public List<DomainDish> getAllDishes(String tenantCode) throws ServiceException {

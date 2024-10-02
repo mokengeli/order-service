@@ -7,19 +7,6 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class DishArticleMapper {
 
-    public DishArticle toEntity(DomainDishArticle domainDishArticle) {
-        if (domainDishArticle == null) {
-            return null;
-        }
-
-        return DishArticle.builder()
-
-                .dish(DishMapper.toEntity(domainDishArticle.getDish()))
-                .article(ArticleMapper.toLigthEntity(domainDishArticle.getArticle()))
-                .quantity(domainDishArticle.getQuantity())
-                .removable(domainDishArticle.getRemovable())
-                .build();
-    }
 
     public DomainDishArticle toDomain(DishArticle dishArticle) {
         if (dishArticle == null) {

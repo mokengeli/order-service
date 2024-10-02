@@ -11,12 +11,10 @@ public class DishMapper {
         if (domainDish == null) {
             return null;
         }
-
         return Dish.builder()
                 .id(domainDish.getId())
                 .name(domainDish.getName())
                 .currentPrice(domainDish.getCurrentPrice())
-
                 .build();
     }
 

@@ -1,12 +1,14 @@
 package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
+import com.bacos.mokengeli.biloko.application.domain.DomainDishArticle;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.ArticleMapper;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.DishArticleMapper;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.DishMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.*;
+import com.bacos.mokengeli.biloko.infrastructure.repository.ArticleRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.DishArticleRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.DishRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.TenantContextRepository;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,12 +27,14 @@ public class DishAdapter implements DishPort {
     private final DishRepository dishRepository;
     private final TenantContextRepository tenantContextRepository;
     private final DishArticleRepository dishArticleRepository;
+    private final ArticleRepository articleRepository;
 
     @Autowired
-    public DishAdapter(DishRepository dishRepository, TenantContextRepository tenantContextRepository, DishArticleRepository dishArticleRepository) {
+    public DishAdapter(DishRepository dishRepository, TenantContextRepository tenantContextRepository, DishArticleRepository dishArticleRepository, ArticleRepository articleRepository) {
         this.dishRepository = dishRepository;
         this.tenantContextRepository = tenantContextRepository;
         this.dishArticleRepository = dishArticleRepository;
+        this.articleRepository = articleRepository;
     }
 
     @Transactional
@@ -41,20 +46,26 @@ public class DishAdapter implements DishPort {
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + tenantCode));
         dish.setTenantContext(tenantContext);
         dish.setCreatedAt(LocalDateTime.now());
-        final Dish saved = dishRepository.save(dish);
+        dish = dishRepository.save(dish);
+        List<DishArticle> dishArticles = new ArrayList<>();
+        for (DomainDishArticle domainDishArticle : domainDish.getDishArticles()) {
+            Article article = articleRepository.findById(domainDishArticle.getArticle().getId())
+                    .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                            "No article found with the given id " + domainDishArticle.getArticle().getId()));
 
+            DishArticle dishArticle = DishArticle.builder()
+                    .dish(dish)
+                    .article(article)
+                    .quantity(domainDishArticle.getQuantity())
+                    .removable(domainDishArticle.getRemovable())
+                    .build();
 
-        List<DishArticle> dishArticles = domainDish.getDishArticles().stream()
-                .map(x -> {
-                    DishArticle dishArticle = DishArticleMapper.toEntity(x);
-                    dishArticle.setDish(saved);
-                    return dishArticle;
-                }).toList();
-       // saved.setDishArticles(dishArticles);
+            dishArticles.add(dishArticle);
+        }
 
         this.dishArticleRepository.saveAll(dishArticles);
 
-        return DishMapper.toDomain(saved);
+        return DishMapper.toDomain(dish);
     }
 
     @Override
