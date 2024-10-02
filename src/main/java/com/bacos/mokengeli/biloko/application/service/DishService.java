@@ -8,9 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -66,15 +64,10 @@ public class DishService {
 
     }
 
-    public List<DomainDish> getAllDishes(String tenantCode) throws ServiceException {
+    public List<DomainDish> getAllDishes() throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
-        if (!this.userAppService.isAdminUser()
-                && !tenantCode.equals(connectedUser.getTenantCode())) {
-            String errorId = UUID.randomUUID().toString();
-            log.error("[{}]: User [{}] of tenant [{}] try to add dish of tenant [{}]", errorId, connectedUser.getEmployeeNumber(),
-                    connectedUser.getTenantCode(), tenantCode);
-            throw new ServiceException(errorId, "You can't add item owning by another partener");
-        }
-        return dishPort.findAllDishesByTenant(tenantCode);
+        // TODO How to deal with super user role like admin
+        Optional<List<DomainDish>> allDishesByTenant = dishPort.findAllDishesByTenant(connectedUser.getTenantCode());
+        return allDishesByTenant.orElseGet(ArrayList::new);
     }
 }

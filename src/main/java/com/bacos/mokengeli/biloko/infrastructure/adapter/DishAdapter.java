@@ -4,8 +4,6 @@ import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainDishArticle;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
-import com.bacos.mokengeli.biloko.infrastructure.mapper.ArticleMapper;
-import com.bacos.mokengeli.biloko.infrastructure.mapper.DishArticleMapper;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.DishMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.*;
 import com.bacos.mokengeli.biloko.infrastructure.repository.ArticleRepository;
@@ -19,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -69,8 +68,13 @@ public class DishAdapter implements DishPort {
     }
 
     @Override
-    public List<DomainDish> findAllDishesByTenant(String tenantCode) {
-        // dishRepository.findAllByTenantCode(tenantCode);
-        return null;
+    public Optional<List<DomainDish>> findAllDishesByTenant(String tenantCode) {
+        Optional<List<Dish>> optDish = dishRepository.findByTenantContextTenantCode(tenantCode);
+        List<DomainDish> dishes = new ArrayList<>();
+        if (optDish.isEmpty()) {
+            return Optional.empty();
+        }
+        List<DomainDish> domainDishes = optDish.get().stream().map(DishMapper::toDomain).toList();
+        return Optional.of(domainDishes);
     }
 }

@@ -4,9 +4,10 @@ import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface DishPort {
     DomainDish saveDish(DomainDish dish) throws ServiceException;
 
-    List<DomainDish> findAllDishesByTenant(String tenantCode);  // Fetch dishes by tenant
+    Optional<List<DomainDish>> findAllDishesByTenant(String tenantCode);  // Fetch dishes by tenant
 }
