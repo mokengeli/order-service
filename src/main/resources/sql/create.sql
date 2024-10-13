@@ -74,3 +74,19 @@ CREATE TABLE order_service_schema.tenant_promotions (
                                                         end_date TIMESTAMP NOT NULL,
                                                         is_active BOOLEAN DEFAULT TRUE
 );
+
+
+-- Categories Table
+CREATE TABLE order_service_schema.categories (
+                                             id SERIAL PRIMARY KEY,
+                                             name VARCHAR(255) NOT NULL UNIQUE,
+                                             created_at TIMESTAMP NOT NULL,
+                                             updated_at TIMESTAMP
+);
+
+-- Dish Categories Table (for composite dishes and categories)
+CREATE TABLE order_service_schema.dish_categories (
+                                                    dish_id INT NOT NULL REFERENCES order_service_schema.dishes(id),
+                                                    category_id INT NOT NULL REFERENCES order_service_schema.categories(id),
+                                                    PRIMARY KEY (dish_id, category_id)
+);

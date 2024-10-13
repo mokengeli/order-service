@@ -43,4 +43,7 @@ public class Dish {
 
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
     private List<DishPriceHistory> priceHistory; // Link to price history
+
+    @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
+    private List<DishCategory> dishCategories;
 }
