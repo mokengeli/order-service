@@ -90,3 +90,9 @@ CREATE TABLE order_service_schema.dish_categories (
                                                     category_id INT NOT NULL REFERENCES order_service_schema.categories(id),
                                                     PRIMARY KEY (dish_id, category_id)
 );
+
+CREATE TABLE order_service_schema.tenant_category (
+                                        id SERIAL PRIMARY KEY,
+                                        tenant_code VARCHAR(255) NOT NULL UNIQUE,  -- Identifier for the tenant
+                                        enabled_category jsonb NOT NULL             -- JSONB field to store the list of enabled categories
+);
