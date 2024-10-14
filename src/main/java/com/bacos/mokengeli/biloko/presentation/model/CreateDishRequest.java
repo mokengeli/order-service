@@ -9,6 +9,7 @@ public class CreateDishRequest {
     private Double price;
     private String tenantCode;
     private List<DishArticleRequest> dishArticles;
+    private List<String> categories;
 
     @Data
     public static class DishArticleRequest {

@@ -8,7 +8,18 @@ INSERT INTO order_service_schema.articles (name, unit_of_measure, tenant_context
 VALUES ('Burger Bun', 'piece', 1, NOW(), NOW()),
        ('Tomato', 'kg', 2, NOW(), NOW());
 
-INSERT INTO order_service_schema.tenant_category (tenant_code, enabled_category)
+
+
+INSERT INTO order_service_schema.categories (name, created_at)
+VALUES ('Burger', NOW()),
+       ( 'Pizza', NOW());
+
+
+
+
+
+INSERT INTO order_service_schema.tenant_context_categories (tenant_context_id, category_id)
 VALUES
-    ('T1', '["Burger", "Pizza", "Noodles"]'),
-    ('T2', '["Pancakes", "Cheese"]');
+    (1, 1),
+    (1, 2);
+

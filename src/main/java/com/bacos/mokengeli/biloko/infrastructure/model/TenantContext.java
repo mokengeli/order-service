@@ -34,4 +34,7 @@ public class TenantContext {
 
     @OneToMany(mappedBy = "tenantContext", cascade = CascadeType.ALL)
     private List<Article> articles;
+
+    @OneToMany(mappedBy = "tenantContext", cascade = CascadeType.ALL)
+    private List<TenantContextCategory> tenantCategories;
 }

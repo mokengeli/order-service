@@ -16,5 +16,6 @@ public class DomainDish {
     private String name;
     private Double currentPrice;
     private String tenantCode;
+    private List<String> categories;
     private List<DomainDishArticle> dishArticles;
 }
