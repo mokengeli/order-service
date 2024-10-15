@@ -1,5 +1,6 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
+import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainMenu;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -30,6 +31,7 @@ public class MenuController {
                     .price(request.getPrice())
                     .tenantCode(request.getTenantCode())
                     .name(request.getName())
+                    .currency(DomainCurrency.builder().id(request.getCurrencyId()).build())
                     .dishes(request.getDishIds().stream()
                             .map(x -> DomainDish.builder().id(x).build()
                             )

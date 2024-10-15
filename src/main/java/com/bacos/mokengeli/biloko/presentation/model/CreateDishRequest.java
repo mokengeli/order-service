@@ -10,6 +10,7 @@ public class CreateDishRequest {
     private String tenantCode;
     private List<DishArticleRequest> dishArticles;
     private List<String> categories;
+    private Long currencyId;
 
     @Data
     public static class DishArticleRequest {

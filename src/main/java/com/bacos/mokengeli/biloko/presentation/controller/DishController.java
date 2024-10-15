@@ -1,6 +1,7 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainArticle;
+import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainDishArticle;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -30,7 +31,9 @@ public class DishController {
             DomainDish dish = DomainDish.builder()
                     .name(request.getName())
                     .tenantCode(request.getTenantCode())
-                    .currentPrice(request.getPrice())
+                    .price(request.getPrice())
+                    .categories(request.getCategories())
+                    .currency(DomainCurrency.builder().id(request.getCurrencyId()).build())
                     .dishArticles(request.getDishArticles()
                             .stream().map(x -> DomainDishArticle.builder()
                                     .article(DomainArticle.builder().id(x.getArticleId()).build())

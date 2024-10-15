@@ -26,6 +26,9 @@ public class Menu {
     @Column(name = "price", nullable = false)
     private Double price;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
     @ManyToOne
     @JoinColumn(name = "tenant_context_id", nullable = false)
     private TenantContext tenantContext;  // Link to TenantContext
@@ -38,4 +41,7 @@ public class Menu {
 
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL)
     private List<MenuDish> menuDishes;
+    @ManyToOne
+    @JoinColumn(name = "currency_id", nullable = false)
+    private Currency currency;
 }

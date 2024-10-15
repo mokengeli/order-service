@@ -14,12 +14,11 @@ INSERT INTO order_service_schema.categories (name, created_at)
 VALUES ('Burger', NOW()),
        ( 'Pizza', NOW());
 
-
-
-
+INSERT INTO order_service_schema.currencies (label, code)
+VALUES ('Franc Congolais', "FC"),
+       ( 'Dollars', "$");
 
 INSERT INTO order_service_schema.tenant_context_categories (tenant_context_id, category_id)
 VALUES
     (1, 1),
     (1, 2);
-

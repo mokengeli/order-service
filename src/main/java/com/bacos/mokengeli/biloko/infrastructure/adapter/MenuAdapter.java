@@ -1,5 +1,6 @@
 package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
+import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainMenu;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -7,10 +8,7 @@ import com.bacos.mokengeli.biloko.application.port.MenuPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.DishMapper;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.MenuMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.*;
-import com.bacos.mokengeli.biloko.infrastructure.repository.DishRepository;
-import com.bacos.mokengeli.biloko.infrastructure.repository.MenuDishRepository;
-import com.bacos.mokengeli.biloko.infrastructure.repository.MenuRepository;
-import com.bacos.mokengeli.biloko.infrastructure.repository.TenantContextRepository;
+import com.bacos.mokengeli.biloko.infrastructure.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -28,23 +26,35 @@ public class MenuAdapter implements MenuPort {
     private final TenantContextRepository tenantContextRepository;
     private final DishRepository dishRepository;
     private final MenuDishRepository menuDishRepository;
+    private final CurrencyRepository currencyRepository;
 
     @Autowired
-    public MenuAdapter(MenuRepository menuRepository, TenantContextRepository tenantContextRepository, DishRepository dishRepository, MenuDishRepository menuDishRepository) {
+    public MenuAdapter(MenuRepository menuRepository, TenantContextRepository tenantContextRepository, DishRepository dishRepository, MenuDishRepository menuDishRepository, CurrencyRepository currencyRepository) {
         this.menuRepository = menuRepository;
         this.tenantContextRepository = tenantContextRepository;
         this.dishRepository = dishRepository;
         this.menuDishRepository = menuDishRepository;
+        this.currencyRepository = currencyRepository;
     }
 
     @Transactional
     @Override
     public DomainMenu createMenu(DomainMenu domainMenu) throws ServiceException {
         Menu menu = MenuMapper.toEntity(domainMenu);
+
+        DomainCurrency domainCurrency = domainMenu.getCurrency();
+        if (domainCurrency == null) {
+            throw new ServiceException(UUID.randomUUID().toString(), "The currency must be provided");
+        }
+        Currency currency = this.currencyRepository.findById(domainCurrency.getId())
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No currency found with id " + domainCurrency.getId()));
+
+
         String tenantCode = domainMenu.getTenantCode();
         TenantContext tenantContext = this.tenantContextRepository.findByTenantCode(tenantCode)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + tenantCode));
         menu.setTenantContext(tenantContext);
+        menu.setCurrency(currency);
         menu.setCreatedAt(LocalDateTime.now());
         menu = this.menuRepository.save(menu);
         List<MenuDish> menuDishes = new ArrayList<>();

@@ -25,8 +25,11 @@ public class Dish {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "current_price", nullable = false)
-    private Double currentPrice; // Holds the current price
+    @Column(name = "price", nullable = false)
+    private Double price; // Holds the current price
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -46,4 +49,8 @@ public class Dish {
 
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
     private List<DishCategory> dishCategories;
+
+    @ManyToOne
+    @JoinColumn(name = "currency_id", nullable = false)
+    private Currency currency;
 }

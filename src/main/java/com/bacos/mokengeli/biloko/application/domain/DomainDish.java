@@ -14,7 +14,8 @@ import java.util.List;
 public class DomainDish {
     private Long id;
     private String name;
-    private Double currentPrice;
+    private Double price;
+    private DomainCurrency currency;
     private String tenantCode;
     private List<String> categories;
     private List<DomainDishArticle> dishArticles;

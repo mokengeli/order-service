@@ -37,14 +37,20 @@ public class DishService {
             log.error("[{}]: User [{}]. No tenantCode given for dish creation", errorId, connectedUser.getEmployeeNumber());
             throw new ServiceException(errorId, "tenant is mandatory");
         }
-        if (Objects.isNull(dish.getCurrentPrice())) {
+        if (Objects.isNull(dish.getPrice())) {
             String errorId = UUID.randomUUID().toString();
             log.error("[{}]: User [{}]. No price given for dish creation", errorId, connectedUser.getEmployeeNumber());
             throw new ServiceException(errorId, "price is mandatory");
         }
-        if (dish.getCurrentPrice() < 0) {
+        if (dish.getPrice() < 0) {
             String errorId = UUID.randomUUID().toString();
-            log.error("[{}]: User [{}]. price = [{}] must be >= 0", errorId, connectedUser.getEmployeeNumber(), dish.getCurrentPrice());
+            log.error("[{}]: User [{}]. price = [{}] must be >= 0", errorId, connectedUser.getEmployeeNumber(), dish.getPrice());
+        }
+
+        if (Objects.isNull(dish.getCurrency().getId())) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}]. No currency given for dish creation", errorId, connectedUser.getEmployeeNumber());
+            throw new ServiceException(errorId, "currency is mandatory");
         }
 
         if (!this.userAppService.isAdminUser()
