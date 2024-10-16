@@ -75,4 +75,21 @@ public class DishService {
         Optional<List<DomainDish>> allDishesByTenant = dishPort.findAllDishesByTenant(connectedUser.getTenantCode());
         return allDishesByTenant.orElseGet(ArrayList::new);
     }
+
+    public DomainDish getDish(Long id) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        String tenantCode = connectedUser.getTenantCode();
+        List<Long> ids = Collections.singletonList(id);
+        boolean allDishesOfTenant = this.dishPort.isAllDishesOfTenant(tenantCode, ids);
+        if (!allDishesOfTenant) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] of tenant [{}] try to get a dish of different tenant. Here it's the dish ids [{}]", errorId, connectedUser.getEmployeeNumber(),
+                    connectedUser.getTenantCode(), ids);
+        }
+        Optional<DomainDish> optDish = this.dishPort.getDish(id);
+        if (optDish.isPresent()) {
+            return optDish.get();
+        }
+        throw new ServiceException(UUID.randomUUID().toString(), "Dish not found");
+    }
 }

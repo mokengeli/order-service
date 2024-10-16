@@ -18,5 +18,5 @@ public class DomainDish {
     private DomainCurrency currency;
     private String tenantCode;
     private List<String> categories;
-    private List<DomainDishArticle> dishArticles;
+    private List<DomainDishProduct> dishProducts;
 }

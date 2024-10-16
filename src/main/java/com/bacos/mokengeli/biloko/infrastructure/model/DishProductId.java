@@ -12,22 +12,22 @@ import java.util.Objects;
 @NoArgsConstructor
 @Builder
 @AllArgsConstructor
-public class DishArticleId implements Serializable {
+public class DishProductId implements Serializable {
 
     private Long dish;
-    private Long article;
+    private Long product;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DishArticleId that = (DishArticleId) o;
+        DishProductId that = (DishProductId) o;
         return Objects.equals(dish, that.dish) &&
-                Objects.equals(article, that.article);
+                Objects.equals(product, that.product);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(dish, article);
+        return Objects.hash(dish, product);
     }
 }

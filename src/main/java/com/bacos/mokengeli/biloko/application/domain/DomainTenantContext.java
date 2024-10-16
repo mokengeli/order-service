@@ -13,5 +13,5 @@ public class DomainTenantContext {
     private String tenantName;
     private List<DomainDish> dishes;
     private List<DomainMenu> menus;
-    private List<DomainArticle> articles;
+    private List<DomainProduct> products;
 }

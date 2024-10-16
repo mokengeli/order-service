@@ -9,10 +9,12 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DomainDishArticle {
+public class DomainDishProduct {
 
-    private DomainDish dish;        // Reference to DomainDish
-    private DomainArticle article;  // Reference to DomainArticle
+    private DomainDish dish;
+    private Long productId;
+    private String productName;
+    private String unitOfMeasure;
     private Double quantity;
     private Boolean removable;
 }

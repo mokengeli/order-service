@@ -1,9 +1,9 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
-import com.bacos.mokengeli.biloko.application.domain.DomainArticle;
+import com.bacos.mokengeli.biloko.application.domain.DomainProduct;
 import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
-import com.bacos.mokengeli.biloko.application.domain.DomainDishArticle;
+import com.bacos.mokengeli.biloko.application.domain.DomainDishProduct;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.DishService;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
@@ -34,9 +34,9 @@ public class DishController {
                     .price(request.getPrice())
                     .categories(request.getCategories())
                     .currency(DomainCurrency.builder().id(request.getCurrencyId()).build())
-                    .dishArticles(request.getDishArticles()
-                            .stream().map(x -> DomainDishArticle.builder()
-                                    .article(DomainArticle.builder().id(x.getArticleId()).build())
+                    .dishProducts(request.getDishProducts()
+                            .stream().map(x -> DomainDishProduct.builder()
+                                    .productId(x.getProductId())
                                     .quantity(x.getQuantity())
                                     .removable(x.getRemovable()).build()).toList())
                     .build();
@@ -55,4 +55,14 @@ public class DishController {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
     }
+
+    @GetMapping("/{id}")
+    public DomainDish getDishById(@PathVariable("id") Long id) {
+        try {
+            return dishService.getDish(id);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
 }

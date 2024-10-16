@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "menu_dishes", schema = "order_service_schema")
+@Table(name = "menu_dishes")
 @IdClass(MenuDishId.class)
 public class MenuDish implements Serializable {
 

@@ -42,7 +42,7 @@ public class Dish {
     private TenantContext tenantContext;  // Link to TenantContext
 
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
-    private List<DishArticle> dishArticles;
+    private List<DishProduct> dishProducts;
 
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
     private List<DishPriceHistory> priceHistory; // Link to price history

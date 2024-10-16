@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DomainArticle {
+public class DomainProduct {
     private Long id;
     private String name;
     private String unitOfMeasure;

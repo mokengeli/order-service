@@ -14,15 +14,7 @@ CREATE TABLE order_service_schema.currencies (
                                                code VARCHAR(10) NOT NULL UNIQUE
 );
 
--- Articles Table
-CREATE TABLE order_service_schema.articles (
-                                               id SERIAL PRIMARY KEY,
-                                               name VARCHAR(255) NOT NULL,
-                                               unit_of_measure VARCHAR(50) NOT NULL,
-                                               tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                                               created_at TIMESTAMP NOT NULL,
-                                               updated_at TIMESTAMP
-);
+
 
 -- Dishes Table
 CREATE TABLE order_service_schema.dishes (
@@ -37,13 +29,14 @@ CREATE TABLE order_service_schema.dishes (
                                              CONSTRAINT unique_dish_per_tenant UNIQUE (name, tenant_context_id)
 );
 
--- Dish Articles Table (for composite dishes)
-CREATE TABLE order_service_schema.dish_articles (
-                                                    dish_id INT NOT NULL REFERENCES order_service_schema.dishes(id) ON DELETE CASCADE,
-                                                    article_id INT NOT NULL REFERENCES order_service_schema.articles(id),
+-- Dish products Table (for composite dishes)
+CREATE TABLE order_service_schema.dish_products (
+                                                    id SERIAL PRIMARY KEY,
+                                                    product_id INT NOT NULL,
                                                     quantity DOUBLE PRECISION NOT NULL,
-                                                    removable BOOLEAN DEFAULT TRUE,
-                                                    PRIMARY KEY (dish_id, article_id)
+                                                    dish_id INT NOT NULL REFERENCES order_service_schema.dishes(id) ON DELETE CASCADE,
+                                                    CONSTRAINT unique_product_id_per_dish_id UNIQUE (product_id, dish_id)
+
 );
 
 -- Menus Table

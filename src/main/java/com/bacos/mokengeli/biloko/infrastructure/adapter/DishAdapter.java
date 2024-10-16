@@ -1,8 +1,9 @@
 package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
+import com.bacos.mokengeli.biloko.IdsDto;
 import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
-import com.bacos.mokengeli.biloko.application.domain.DomainDishArticle;
+import com.bacos.mokengeli.biloko.application.domain.DomainDishProduct;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.DishMapper;
@@ -23,19 +24,19 @@ public class DishAdapter implements DishPort {
 
     private final DishRepository dishRepository;
     private final TenantContextRepository tenantContextRepository;
-    private final DishArticleRepository dishArticleRepository;
+    private final DishProductRepository dishProductRepository;
     private final DishCategoryRepository dishCategoryRepository;
-    private final ArticleRepository articleRepository;
+    private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final CurrencyRepository currencyRepository;
 
     @Autowired
-    public DishAdapter(DishRepository dishRepository, TenantContextRepository tenantContextRepository, DishArticleRepository dishArticleRepository, DishCategoryRepository dishCategoryRepository, ArticleRepository articleRepository, CategoryRepository categoryRepository, CurrencyRepository currencyRepository) {
+    public DishAdapter(DishRepository dishRepository, TenantContextRepository tenantContextRepository, DishProductRepository dishProductRepository, DishCategoryRepository dishCategoryRepository, ProductRepository productRepository, CategoryRepository categoryRepository, CurrencyRepository currencyRepository) {
         this.dishRepository = dishRepository;
         this.tenantContextRepository = tenantContextRepository;
-        this.dishArticleRepository = dishArticleRepository;
+        this.dishProductRepository = dishProductRepository;
         this.dishCategoryRepository = dishCategoryRepository;
-        this.articleRepository = articleRepository;
+        this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.currencyRepository = currencyRepository;
     }
@@ -43,12 +44,12 @@ public class DishAdapter implements DishPort {
     @Transactional
     @Override
     public DomainDish createDish(DomainDish domainDish) throws ServiceException {
-        List<DomainDishArticle> domainDishArticles = domainDish.getDishArticles();
-        if (domainDishArticles == null || domainDishArticles.isEmpty()) {
+        List<DomainDishProduct> domainDishProducts = domainDish.getDishProducts();
+        if (domainDishProducts == null || domainDishProducts.isEmpty()) {
             throw new ServiceException(UUID.randomUUID().toString(), "The compostion of the dish must be provided");
         }
         DomainCurrency domainCurrency = domainDish.getCurrency();
-        if (domainCurrency == null ) {
+        if (domainCurrency == null) {
             throw new ServiceException(UUID.randomUUID().toString(), "The currency must be provided");
         }
         Currency currency = this.currencyRepository.findById(domainCurrency.getId())
@@ -63,8 +64,8 @@ public class DishAdapter implements DishPort {
         dish.setCreatedAt(LocalDateTime.now());
         dish = dishRepository.save(dish);
 
-        List<DishArticle> dishArticles = createDishArticles(domainDish.getDishArticles(), dish);
-        this.dishArticleRepository.saveAll(dishArticles);
+        List<DishProduct> dishProducts = createDishProducts(domainDish.getDishProducts(), dish);
+        this.dishProductRepository.saveAll(dishProducts);
         List<String> categories = domainDish.getCategories();
         if (categories != null && !categories.isEmpty()) {
             List<DishCategory> dishCategories = createDishCategories(categories, dish);
@@ -76,38 +77,37 @@ public class DishAdapter implements DishPort {
         return domainDish1;
     }
 
-    private List<DishArticle> createDishArticles(List<DomainDishArticle> domainDishArticles, Dish dish) throws ServiceException {
-        List<DishArticle> dishArticles = new ArrayList<>();
-        for (DomainDishArticle domainDishArticle : domainDishArticles) {
-            Article article = articleRepository.findById(domainDishArticle.getArticle().getId())
+    private List<DishProduct> createDishProducts(List<DomainDishProduct> domainDishProducts, Dish dish) throws ServiceException {
+        List<DishProduct> dishProducts = new ArrayList<>();
+        for (DomainDishProduct domainDishProduct : domainDishProducts) {
+            Product product = productRepository.findById(domainDishProduct.getProductId())
                     .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
-                            "No article found with the given id " + domainDishArticle.getArticle().getId()));
+                            "No article found with the given id " + domainDishProduct.getProductId()));
 
-            DishArticle dishArticle = DishArticle.builder()
+            DishProduct dishProduct = DishProduct.builder()
                     .dish(dish)
-                    .article(article)
-                    .quantity(domainDishArticle.getQuantity())
-                    .removable(domainDishArticle.getRemovable())
+                    .productId(product.getId())
+                    .quantity(domainDishProduct.getQuantity())
                     .build();
 
-            dishArticles.add(dishArticle);
+            dishProducts.add(dishProduct);
         }
-        return dishArticles;
+        return dishProducts;
     }
 
     private List<DishCategory> createDishCategories(List<String> categories, Dish dish) throws ServiceException {
         List<DishCategory> dishCategories = new ArrayList<>();
-        for (String name :categories) {
+        for (String name : categories) {
             Category category = this.categoryRepository.findByName(name)
                     .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                             "No category found with the name " + name));
 
-            DishCategory dishArticle = DishCategory.builder()
+            DishCategory dishCategory = DishCategory.builder()
                     .dish(dish)
                     .category(category)
                     .build();
 
-            dishCategories.add(dishArticle);
+            dishCategories.add(dishCategory);
         }
         return dishCategories;
     }
@@ -125,5 +125,29 @@ public class DishAdapter implements DishPort {
     @Override
     public boolean isAllDishesOfTenant(String tenantCode, List<Long> dishIds) {
         return this.dishRepository.isAllDishesOfTenant(tenantCode, dishIds, dishIds.size());
+    }
+
+    @Override
+    public Optional<DomainDish> getDish(Long id) throws ServiceException {
+        Dish dish = this.dishRepository.findById(id).orElseThrow(
+                () -> new ServiceException(UUID.randomUUID().toString(), "No dish found with id " + id)
+        );
+        List<DishProduct> dishProducts = dish.getDishProducts();
+        List<Long> ids = dishProducts.stream().map(DishProduct::getProductId)
+                .toList();
+
+        Optional<List<Product>> products = this.productRepository.findByIds(ids);
+        DomainDish domainDish = DishMapper.toDomain(dish);
+        List<DomainDishProduct> domainDishProducts = new ArrayList<>();
+        products.ifPresent(productList -> productList.forEach(product -> {
+           Double quantity =  this.dishProductRepository.getQuantityByProductIdAndDishId(product.getId(),
+                   dish.getId());
+            domainDishProducts.add(DomainDishProduct.builder().productId(product.getId()).productName(product.getName())
+                    .unitOfMeasure(product.getUnitOfMeasure())
+                            .quantity(quantity)
+                    .build());
+        }));
+        domainDish.setDishProducts(domainDishProducts);
+        return Optional.of(domainDish);
     }
 }
