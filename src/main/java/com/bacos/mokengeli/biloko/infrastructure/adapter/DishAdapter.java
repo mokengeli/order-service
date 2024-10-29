@@ -1,6 +1,5 @@
 package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
-import com.bacos.mokengeli.biloko.IdsDto;
 import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainDishProduct;
@@ -140,14 +139,18 @@ public class DishAdapter implements DishPort {
         DomainDish domainDish = DishMapper.toDomain(dish);
         List<DomainDishProduct> domainDishProducts = new ArrayList<>();
         products.ifPresent(productList -> productList.forEach(product -> {
-           Double quantity =  this.dishProductRepository.getQuantityByProductIdAndDishId(product.getId(),
-                   dish.getId());
+            Double quantity = this.dishProductRepository.getQuantityByProductIdAndDishId(product.getId(),
+                    dish.getId());
             domainDishProducts.add(DomainDishProduct.builder().productId(product.getId()).productName(product.getName())
                     .unitOfMeasure(product.getUnitOfMeasure())
-                            .quantity(quantity)
+                    .quantity(quantity)
                     .build());
         }));
         domainDish.setDishProducts(domainDishProducts);
         return Optional.of(domainDish);
+    }
+    @Override
+    public Double getDishPrice(Long dishId) {
+        return this.dishRepository.findPriceById(dishId);
     }
 }

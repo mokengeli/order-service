@@ -104,4 +104,40 @@ CREATE TABLE order_service_schema.tenant_context_categories (
 );
 
 
+CREATE TABLE order_service_schema.orders (
+                                             id SERIAL PRIMARY KEY,
+                                             ref_table VARCHAR(255),
+                                             state VARCHAR(50) NOT NULL,
+                                             total_price DECIMAL(12, 2) NOT NULL,
+                                             tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
+                                             currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
+                                             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                             updated_at TIMESTAMP
+);
+
+CREATE TABLE order_service_schema.order_items (
+                                                  id SERIAL PRIMARY KEY,
+                                                  note TEXT,
+                                                  count INT NOT NULL,
+                                                  unit_price DECIMAL(12, 2) NOT NULL,
+                                                  order_id INT NOT NULL REFERENCES order_service_schema.orders(id),
+                                                  dish_id INT REFERENCES order_service_schema.dishes(id),
+                                                  currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
+                                                  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE order_service_schema.orders_audit (
+                                                   id SERIAL PRIMARY KEY,
+                                                   audit_action VARCHAR(50) NOT NULL,  -- For example, "CREATED", "UPDATED", "DELETED"
+                                                   old_state VARCHAR(50),
+                                                   new_state VARCHAR(50),
+                                                   change_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                                   order_id INT NOT NULL REFERENCES order_service_schema.orders(id),
+                                                   tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
+                                                   changed_by VARCHAR(255) NOT NULL  -- Employee number or any identifier for the user who made the change
+);
+
+
+
+
 

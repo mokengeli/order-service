@@ -24,7 +24,6 @@ public class DishService {
     }
 
     public DomainDish createDish(DomainDish dish) throws ServiceException {
-        // Assign tenant code
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
 
         if (Objects.isNull(dish.getName())) {

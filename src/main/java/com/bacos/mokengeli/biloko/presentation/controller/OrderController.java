@@ -2,10 +2,17 @@ package com.bacos.mokengeli.biloko.presentation.controller;
 
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
+import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
+import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.OrderService;
+import com.bacos.mokengeli.biloko.presentation.CreateOrderRequest;
+import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/order")
 public class OrderController {
@@ -17,22 +24,19 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-   /** @PostMapping
+    @PostMapping
     public DomainOrder createOrder(@RequestBody CreateOrderRequest request) {
         try {
-            DomainOrder createdOrder = orderService.createOrder(request);
-            return createdOrder;
-        } catch ( ServiceException e) {
+            List<CreateOrderRequest.CreateOrderItemRequest> orderItems = request.getOrderItems();
+            List<CreateOrderItem> createOrderItems = orderItems.stream().map(x -> CreateOrderItem.builder()
+                    .count(x.getCount())
+                    .note(x.getNote())
+                    .dishId(x.getDishId())
+                    .build()).toList();
+            return orderService.createOrder(request.getCurrencyId(),
+                    request.getRefTable(), createOrderItems);
+        } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
-    }*/
-
-  /**  @PostMapping("/{orderId}/status")
-    public void updateOrderStatus(@PathVariable Long orderId, @RequestBody UpdateOrderStatusRequest request) {
-        try {
-            orderService.updateOrderStatus(orderId, request.getStatus());
-        } catch ( ServiceException e) {
-            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
-        }
-    }*/
+    }
 }

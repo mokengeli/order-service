@@ -1,5 +1,5 @@
 package com.bacos.mokengeli.biloko.application.domain;
 
-public enum OrderStatus {
+public enum OrderState {
     PENDING, IN_PREPARATION, REJECTED, PREPARED, SERVED, PAID
 }
