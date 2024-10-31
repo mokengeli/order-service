@@ -21,7 +21,9 @@ public class DomainOrder {
     @Builder
     @Data
     public static class DomainOrderItem {
+        private Long id;
         private Long dishId;
+        private String dishName;
         private String note;
         private int count;
         private Double unitPrice;

@@ -2,7 +2,6 @@ package com.bacos.mokengeli.biloko.infrastructure.mapper;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
-import com.bacos.mokengeli.biloko.application.domain.OrderState;
 import com.bacos.mokengeli.biloko.infrastructure.model.Currency;
 import com.bacos.mokengeli.biloko.infrastructure.model.Order;
 import com.bacos.mokengeli.biloko.infrastructure.model.OrderItem;
@@ -21,9 +20,9 @@ public class DomainOrderMapper {
                 .builder()
                 .id(order.getId())
                 .tenantCode(order.getTenantContext().getTenantCode())
-                .refTable(order.getRefTable())
+                .refTable(order.getRefTable().getName())
                 .items(orderItems)
-                .state(OrderState.valueOf(order.getState()))
+                .state(order.getState())
                 .currency(DomainCurrency.builder()
                         .code(currency.getCode())
                         .label(currency.getLabel())
@@ -35,12 +34,45 @@ public class DomainOrderMapper {
 
     }
 
-    public static DomainOrder.DomainOrderItem toDomainOrderItem(OrderItem OrderItem) {
+    public static DomainOrder toLigthDomain(Order order) {
+        Currency currency = order.getCurrency();
+        List<OrderItem> items = order.getItems();
+        List<DomainOrder.DomainOrderItem> orderItems = items.stream().map(DomainOrderMapper::toLigthDomainOrderItem)
+                .toList();
+        return DomainOrder
+                .builder()
+                .id(order.getId())
+                .tenantCode(order.getTenantContext().getTenantCode())
+                .refTable(order.getRefTable().getName())
+                .state(order.getState())
+                .items(orderItems)
+                .currency(DomainCurrency.builder()
+                        .code(currency.getCode())
+                        .label(currency.getLabel())
+                        .id(currency.getId())
+
+                        .build())
+                .totalPrice(order.getTotalPrice())
+                .build();
+
+    }
+
+    public static DomainOrder.DomainOrderItem toDomainOrderItem(OrderItem orderItem) {
         return DomainOrder.DomainOrderItem.builder()
-                .count(OrderItem.getCount())
-                .note(OrderItem.getNote())
-                .dishId(OrderItem.getDish().getId())
-                .unitPrice(OrderItem.getUnitPrice())
+                .id(orderItem.getId())
+                .count(orderItem.getCount())
+                .note(orderItem.getNote())
+                .dishId(orderItem.getDish().getId())
+                .dishName(orderItem.getDish().getName())
+                .unitPrice(orderItem.getUnitPrice())
+                .build();
+    }
+
+    public static DomainOrder.DomainOrderItem toLigthDomainOrderItem(OrderItem orderItem) {
+        return DomainOrder.DomainOrderItem.builder()
+                .id(orderItem.getId())
+                .dishName(orderItem.getDish().getName())
+                .count(orderItem.getCount())
                 .build();
     }
 }

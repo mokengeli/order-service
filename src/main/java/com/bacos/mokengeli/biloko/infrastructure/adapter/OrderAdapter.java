@@ -1,6 +1,7 @@
 package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
+import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
@@ -14,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,15 +25,16 @@ public class OrderAdapter implements OrderPort {
     private final CurrencyRepository currencyRepository;
     private final TenantContextRepository tenantContextRepository;
     private final DishRepository dishRepository;
-    private final OrderItemRepository orderItemRepository;
+    private final RefTableRepository refTableRepository;
 
     @Autowired
-    public OrderAdapter(OrderRepository orderRepository, CurrencyRepository currencyRepository, TenantContextRepository tenantContextRepository, DishRepository dishRepository, OrderItemRepository orderItemRepository) {
+    public OrderAdapter(OrderRepository orderRepository, CurrencyRepository currencyRepository,
+                        TenantContextRepository tenantContextRepository, DishRepository dishRepository, RefTableRepository refTableRepository) {
         this.orderRepository = orderRepository;
         this.currencyRepository = currencyRepository;
         this.tenantContextRepository = tenantContextRepository;
         this.dishRepository = dishRepository;
-        this.orderItemRepository = orderItemRepository;
+        this.refTableRepository = refTableRepository;
     }
 
     @Transactional
@@ -43,21 +44,53 @@ public class OrderAdapter implements OrderPort {
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + createOrder.getTenantCode()));
         Currency currency = this.currencyRepository.findById(createOrder.getCurrencyId())
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No currency found with id " + createOrder.getCurrencyId()));
+        RefTable refTable = this.refTableRepository.findByName(createOrder.getRefTable())
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No Ref table found with the name " + createOrder.getRefTable()));
 
         Order order = Order.builder()
-                .state(OrderState.PENDING.name())
-                .refTable(createOrder.getRefTable())
+                .state(OrderState.PENDING)
+                .refTable(refTable)
                 .totalPrice(createOrder.getTotalPrice())
                 .currency(currency)
                 .tenantContext(tenantContext)
                 .createdAt(LocalDateTime.now())
                 .build();
-
         createAndSetOrderItems(order, currency, createOrder.getOrderItems());
-
         order = this.orderRepository.save(order);
 
         return Optional.of(DomainOrderMapper.toDomain(order));
+    }
+
+    @Override
+    public Optional<List<DomainOrder>> getOrdersByState(OrderState orderState, String tenantCode) throws ServiceException {
+        boolean existsByTenantCode = this.tenantContextRepository.existsByTenantCode(tenantCode);
+        if (!existsByTenantCode) {
+            throw new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + tenantCode);
+        }
+
+        List<Order> orders = this.orderRepository.findByStateAndTenantContextTenantCode(orderState, tenantCode);
+        List<DomainOrder> list = orders.stream()
+                .map(DomainOrderMapper::toLigthDomain)
+                .toList();
+        return Optional.of(list);
+    }
+
+    @Override
+    public boolean isRefTableBelongToTenant(String refTableName, String tenantCode) {
+        return this.refTableRepository.existsByNameAndTenantContextTenantCode(refTableName, tenantCode);
+    }
+
+    @Override
+    public Optional<List<DomainRefTable>> getRefTablesByTenantCode(String tenantCode) {
+        Optional<List<RefTable>> optRefTable = this.refTableRepository.findByTenantContextTenantCode(tenantCode);
+        if (optRefTable.isEmpty()) {
+            return Optional.empty();
+        }
+        List<RefTable> refTables = optRefTable.get();
+        List<DomainRefTable> list = refTables.stream()
+                .map(x -> DomainRefTable.builder().name(x.getName()).build())
+                .toList();
+        return Optional.of(list);
     }
 
     private void createAndSetOrderItems(Order order, Currency currency, List<CreateOrderItem> orderItems) throws ServiceException {

@@ -40,6 +40,12 @@ public class OrderService {
             throw new ServiceException(errorId, "RefTable cannot be empty");
         }
         String tenantCode = connectedUser.getTenantCode();
+        if (!this.orderPort.isRefTableBelongToTenant(refTable, tenantCode)) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}]. RefTable [{}] provided neither not exist or not belong to the tenant of user", errorId, connectedUser.getEmployeeNumber(), refTable);
+            throw new ServiceException(errorId, "Table must belong to your company");
+        }
+
         double totalPrice = getTotalPrice(connectedUser, createOrderItems);
         CreateOrder createOrder = CreateOrder.builder()
                 .tenantCode(tenantCode)
@@ -50,7 +56,14 @@ public class OrderService {
                 .state(OrderState.PENDING)
                 .orderItems(createOrderItems)
                 .build();
-        Optional<DomainOrder> order = this.orderPort.createOrder(createOrder);
+        Optional<DomainOrder> order;
+        try {
+            order = this.orderPort.createOrder(createOrder);
+        } catch (ServiceException e) {
+            log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
+                    connectedUser.getEmployeeNumber(), e.getMessage());
+            throw new ServiceException(e.getTechnicalId(), "An internal error occurred");
+        }
         if (order.isEmpty()) {
             String errorId = UUID.randomUUID().toString();
             log.error("[{}]: User [{}]. Create Order is Empty.", errorId,
@@ -58,6 +71,29 @@ public class OrderService {
             throw new ServiceException(errorId, "An internal error occurred");
         }
         return order.get();
+    }
+
+
+    public List<DomainOrder> getOrderByState(String state) throws ServiceException {
+        OrderState orderState = OrderState.valueOf(state);
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        Optional<List<DomainOrder>> optOrder;
+        try {
+            optOrder = orderPort.getOrdersByState(orderState, connectedUser.getTenantCode());
+
+        } catch (ServiceException e) {
+            log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
+                    connectedUser.getEmployeeNumber(), e.getMessage());
+            throw new ServiceException(e.getTechnicalId(), "An internal error occurred");
+        }
+        if (optOrder.isEmpty()) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}]. Create Order is Empty.", errorId,
+                    connectedUser.getEmployeeNumber());
+            throw new ServiceException(errorId, "An internal error occurred");
+        }
+        return optOrder.get();
+
     }
 
     private double getTotalPrice(ConnectedUser connectedUser, List<CreateOrderItem> createOrderItems) throws ServiceException {
@@ -78,6 +114,4 @@ public class OrderService {
         }
         return totalPrice;
     }
-
-
 }

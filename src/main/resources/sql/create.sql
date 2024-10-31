@@ -8,6 +8,15 @@ CREATE TABLE order_service_schema.tenant_context (
                                                      tenant_name VARCHAR(255) NOT NULL
 );
 --
+-- Create the ref_table linked to tenant
+CREATE TABLE order_service_schema.ref_tables (
+                           id SERIAL PRIMARY KEY,
+                           tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
+                           name VARCHAR(255) NOT NULL UNIQUE,
+                           created_at TIMESTAMP NOT NULL,
+                           updated_at TIMESTAMP
+);
+
 CREATE TABLE order_service_schema.currencies (
                                                id SERIAL PRIMARY KEY,
                                                label VARCHAR(255) NOT NULL UNIQUE,
@@ -106,7 +115,7 @@ CREATE TABLE order_service_schema.tenant_context_categories (
 
 CREATE TABLE order_service_schema.orders (
                                              id SERIAL PRIMARY KEY,
-                                             ref_table VARCHAR(255),
+                                             ref_table_id INT NOT NULL REFERENCES order_service_schema.ref_tables(id),
                                              state VARCHAR(50) NOT NULL,
                                              total_price DECIMAL(12, 2) NOT NULL,
                                              tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
@@ -136,6 +145,8 @@ CREATE TABLE order_service_schema.orders_audit (
                                                    tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
                                                    changed_by VARCHAR(255) NOT NULL  -- Employee number or any identifier for the user who made the change
 );
+
+
 
 
 

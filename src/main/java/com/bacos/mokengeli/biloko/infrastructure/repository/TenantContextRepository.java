@@ -10,4 +10,6 @@ import java.util.Optional;
 @Repository
 public interface TenantContextRepository extends JpaRepository<TenantContext, Long> {
     Optional<TenantContext> findByTenantCode(String tenantCode);
+
+    boolean existsByTenantCode(String tenantCode);
 }

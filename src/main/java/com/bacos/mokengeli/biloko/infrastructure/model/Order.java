@@ -1,5 +1,6 @@
 package com.bacos.mokengeli.biloko.infrastructure.model;
 
+import com.bacos.mokengeli.biloko.application.domain.OrderState;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,12 +25,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
-    @Column(name = "ref_table")
-    private String refTable;
-
     @Column(name = "state", nullable = false)
-    private String state;
+    @Enumerated(EnumType.STRING)
+    private OrderState state;
 
     @Column(name = "total_price", nullable = false)
     private Double totalPrice;
@@ -37,6 +35,9 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;
 
+    @ManyToOne
+    @JoinColumn(name = "ref_table_id", nullable = false)
+    private RefTable refTable;
 
     @ManyToOne
     @JoinColumn(name = "currency_id", nullable = false)

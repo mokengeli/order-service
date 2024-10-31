@@ -39,4 +39,14 @@ public class OrderController {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
     }
+
+    @GetMapping("")
+    public List<DomainOrder> getOrdersByState(@RequestParam(name = "state") String state) {
+        try {
+            return orderService.getOrderByState(state);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+
+    }
 }

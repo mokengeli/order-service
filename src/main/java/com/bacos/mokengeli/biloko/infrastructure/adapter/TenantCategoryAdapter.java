@@ -15,34 +15,18 @@ import java.util.*;
 @Component
 public class TenantCategoryAdapter {
     private final TenantCategoryRepository tenantCategoryRepository;
-    private final CategoryRepository categoryRepository;
-    private final TenantContextRepository tenantContextRepository;
 
-    public TenantCategoryAdapter(TenantCategoryRepository TenantCategoryRepository, CategoryRepository categoryRepository, TenantContextRepository tenantContextRepository) {
+
+    public TenantCategoryAdapter(TenantCategoryRepository TenantCategoryRepository) {
         this.tenantCategoryRepository = TenantCategoryRepository;
-        this.categoryRepository = categoryRepository;
-        this.tenantContextRepository = tenantContextRepository;
+
     }
 
-    // Method to add a category
-  /**  public void addCategory(String tenantCode, String categoryName) throws ServiceException {
-        TenantContext tenantContext = tenantContextRepository.findByTenantCode(tenantCode)
+
+    public List<DomainCategory> getCategories(String tenantCode) throws ServiceException {
+        List<TenantContextCategory> tenantCategories = this.tenantCategoryRepository.findByTenantContextTenantCode(tenantCode)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                         "Tenant not found with given tenant code " + tenantCode));
-        Category category = categoryRepository.findByName(categoryName)
-                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
-                        "Category not found with the given name " + categoryName));
-
-        TenantCategory tenantCategory = new TenantCategory();
-        tenantCategory.setCategory(category);
-        tenantCategory.setTenantContext(tenantContext);
-        TenantCategory tenantCategory1 = this.tenantCategoryRepository.save(tenantCategory);
-
-    }
-*/
-    public List<DomainCategory> getCategories(String tenantCode) throws ServiceException {
-        List<TenantContextCategory> tenantCategories = this.tenantCategoryRepository.findByTenantContextTenantCode(tenantCode).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
-                "Tenant not found with given tenant code " + tenantCode));
 
         return tenantCategories.stream()
                 .map(x -> DomainCategory.builder()

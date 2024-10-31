@@ -85,10 +85,17 @@ public class DishService {
             log.error("[{}]: User [{}] of tenant [{}] try to get a dish of different tenant. Here it's the dish ids [{}]", errorId, connectedUser.getEmployeeNumber(),
                     connectedUser.getTenantCode(), ids);
         }
-        Optional<DomainDish> optDish = this.dishPort.getDish(id);
-        if (optDish.isPresent()) {
-            return optDish.get();
+        try {
+            Optional<DomainDish> optDish = this.dishPort.getDish(id);
+            if (optDish.isPresent()) {
+                return optDish.get();
+            }
+        } catch (ServiceException e) {
+            log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
+                    connectedUser.getEmployeeNumber(), e.getMessage());
+            throw new ServiceException(e.getTechnicalId(), "An internal error occurred");
         }
+
         throw new ServiceException(UUID.randomUUID().toString(), "Dish not found");
     }
 }
