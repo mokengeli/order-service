@@ -1,7 +1,7 @@
 package com.bacos.mokengeli.biloko.application.service;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
-import com.bacos.mokengeli.biloko.application.domain.OrderState;
+import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
@@ -53,7 +53,7 @@ public class OrderService {
                 .employeeNumber(connectedUser.getEmployeeNumber())
                 .refTable(refTable)
                 .totalPrice(totalPrice)
-                .state(OrderState.PENDING)
+                .state(OrderItemState.PENDING)
                 .orderItems(createOrderItems)
                 .build();
         Optional<DomainOrder> order;
@@ -75,11 +75,11 @@ public class OrderService {
 
 
     public List<DomainOrder> getOrderByState(String state) throws ServiceException {
-        OrderState orderState = OrderState.valueOf(state);
+        OrderItemState orderItemState = OrderItemState.valueOf(state);
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
         Optional<List<DomainOrder>> optOrder;
         try {
-            optOrder = orderPort.getOrdersByState(orderState, connectedUser.getTenantCode());
+            optOrder = orderPort.getOrdersByState(orderItemState, connectedUser.getTenantCode());
 
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),

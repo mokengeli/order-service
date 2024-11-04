@@ -22,7 +22,6 @@ public class DomainOrderMapper {
                 .tenantCode(order.getTenantContext().getTenantCode())
                 .refTable(order.getRefTable().getName())
                 .items(orderItems)
-                .state(order.getState())
                 .currency(DomainCurrency.builder()
                         .code(currency.getCode())
                         .label(currency.getLabel())
@@ -44,7 +43,6 @@ public class DomainOrderMapper {
                 .id(order.getId())
                 .tenantCode(order.getTenantContext().getTenantCode())
                 .refTable(order.getRefTable().getName())
-                .state(order.getState())
                 .items(orderItems)
                 .currency(DomainCurrency.builder()
                         .code(currency.getCode())
@@ -60,7 +58,7 @@ public class DomainOrderMapper {
     public static DomainOrder.DomainOrderItem toDomainOrderItem(OrderItem orderItem) {
         return DomainOrder.DomainOrderItem.builder()
                 .id(orderItem.getId())
-                .count(orderItem.getCount())
+                .state(orderItem.getState())
                 .note(orderItem.getNote())
                 .dishId(orderItem.getDish().getId())
                 .dishName(orderItem.getDish().getName())
@@ -72,7 +70,9 @@ public class DomainOrderMapper {
         return DomainOrder.DomainOrderItem.builder()
                 .id(orderItem.getId())
                 .dishName(orderItem.getDish().getName())
-                .count(orderItem.getCount())
+                .state(orderItem.getState())
+                .note(orderItem.getNote())
+                .unitPrice(orderItem.getUnitPrice())
                 .build();
     }
 }

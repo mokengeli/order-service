@@ -1,5 +1,6 @@
 package com.bacos.mokengeli.biloko.infrastructure.model;
 
+import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,6 +28,10 @@ public class OrderItem {
     @JoinColumn(name = "dish_id", nullable = false)
     private Dish dish;
 
+    @Column(name = "state", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private OrderItemState state;
+
     @ManyToOne
     @JoinColumn(name = "currency_id", nullable = false)
     private Currency currency;
@@ -34,12 +39,10 @@ public class OrderItem {
     @Column(name = "note")
     private String note;
 
-    @Column(name = "count", nullable = false)
-    private Integer count;
-
     @Column(name = "unit_price", nullable = false)
     private Double unitPrice;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
 }

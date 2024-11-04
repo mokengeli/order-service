@@ -2,7 +2,7 @@ package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
-import com.bacos.mokengeli.biloko.application.domain.OrderState;
+import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -48,7 +48,6 @@ public class OrderAdapter implements OrderPort {
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No Ref table found with the name " + createOrder.getRefTable()));
 
         Order order = Order.builder()
-                .state(OrderState.PENDING)
                 .refTable(refTable)
                 .totalPrice(createOrder.getTotalPrice())
                 .currency(currency)
@@ -62,13 +61,14 @@ public class OrderAdapter implements OrderPort {
     }
 
     @Override
-    public Optional<List<DomainOrder>> getOrdersByState(OrderState orderState, String tenantCode) throws ServiceException {
+    public Optional<List<DomainOrder>> getOrdersByState(OrderItemState orderItemState, String tenantCode) throws ServiceException {
         boolean existsByTenantCode = this.tenantContextRepository.existsByTenantCode(tenantCode);
         if (!existsByTenantCode) {
             throw new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + tenantCode);
         }
 
-        List<Order> orders = this.orderRepository.findByStateAndTenantContextTenantCode(orderState, tenantCode);
+
+        List<Order> orders = this.orderRepository.findByTenantContextTenantCodeAndOrderItemsState(tenantCode, orderItemState);
         List<DomainOrder> list = orders.stream()
                 .map(DomainOrderMapper::toLigthDomain)
                 .toList();
@@ -100,16 +100,18 @@ public class OrderAdapter implements OrderPort {
                 throw new ServiceException(UUID.randomUUID().toString(), "No dish found with id " + orderItem.getDishId());
             }
             Dish dish = optionalDish.get();
-            OrderItem build = OrderItem.builder()
-                    .count(orderItem.getCount())
-                    .note(orderItem.getNote() == null ? "" : orderItem.getNote())
-                    .currency(currency)
-                    .createdAt(LocalDateTime.now())
-                    .dish(dish)
-                    .order(order)
-                    .unitPrice(dish.getPrice())
-                    .build();
-            order.addItem(build);
+            for (int i = 0; i < orderItem.getCount(); i++) {
+                OrderItem build = OrderItem.builder()
+                        .state(OrderItemState.PENDING)
+                        .note(orderItem.getNote() == null ? "" : orderItem.getNote())
+                        .currency(currency)
+                        .createdAt(LocalDateTime.now())
+                        .dish(dish)
+                        .order(order)
+                        .unitPrice(dish.getPrice())
+                        .build();
+                order.addItem(build);
+            }
         }
 
     }

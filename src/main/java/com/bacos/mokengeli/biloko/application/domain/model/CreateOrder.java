@@ -1,6 +1,6 @@
 package com.bacos.mokengeli.biloko.application.domain.model;
 
-import com.bacos.mokengeli.biloko.application.domain.OrderState;
+import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,7 +15,7 @@ public class CreateOrder {
     private String employeeNumber;
     private Long currencyId;
     private List<CreateOrderItem> orderItems;
-    private OrderState state;
+    private OrderItemState state;
     private double totalPrice;
 
 }

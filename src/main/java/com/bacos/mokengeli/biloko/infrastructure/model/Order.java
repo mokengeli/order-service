@@ -1,6 +1,6 @@
 package com.bacos.mokengeli.biloko.infrastructure.model;
 
-import com.bacos.mokengeli.biloko.application.domain.OrderState;
+import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,10 +24,6 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "state", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private OrderState state;
 
     @Column(name = "total_price", nullable = false)
     private Double totalPrice;

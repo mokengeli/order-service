@@ -116,7 +116,6 @@ CREATE TABLE order_service_schema.tenant_context_categories (
 CREATE TABLE order_service_schema.orders (
                                              id SERIAL PRIMARY KEY,
                                              ref_table_id INT NOT NULL REFERENCES order_service_schema.ref_tables(id),
-                                             state VARCHAR(50) NOT NULL,
                                              total_price DECIMAL(12, 2) NOT NULL,
                                              tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
                                              currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
@@ -126,8 +125,8 @@ CREATE TABLE order_service_schema.orders (
 
 CREATE TABLE order_service_schema.order_items (
                                                   id SERIAL PRIMARY KEY,
+                                                  state VARCHAR(50) NOT NULL,
                                                   note TEXT,
-                                                  count INT NOT NULL,
                                                   unit_price DECIMAL(12, 2) NOT NULL,
                                                   order_id INT NOT NULL REFERENCES order_service_schema.orders(id),
                                                   dish_id INT REFERENCES order_service_schema.dishes(id),
