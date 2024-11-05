@@ -9,15 +9,14 @@ import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.OrderPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.DomainOrderMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.*;
+import com.bacos.mokengeli.biloko.infrastructure.model.Currency;
 import com.bacos.mokengeli.biloko.infrastructure.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class OrderAdapter implements OrderPort {
@@ -26,15 +25,17 @@ public class OrderAdapter implements OrderPort {
     private final TenantContextRepository tenantContextRepository;
     private final DishRepository dishRepository;
     private final RefTableRepository refTableRepository;
+    private final OrderItemRepository orderItemRepository;
 
     @Autowired
     public OrderAdapter(OrderRepository orderRepository, CurrencyRepository currencyRepository,
-                        TenantContextRepository tenantContextRepository, DishRepository dishRepository, RefTableRepository refTableRepository) {
+                        TenantContextRepository tenantContextRepository, DishRepository dishRepository, RefTableRepository refTableRepository, OrderItemRepository orderItemRepository) {
         this.orderRepository = orderRepository;
         this.currencyRepository = currencyRepository;
         this.tenantContextRepository = tenantContextRepository;
         this.dishRepository = dishRepository;
         this.refTableRepository = refTableRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     @Transactional
@@ -68,10 +69,31 @@ public class OrderAdapter implements OrderPort {
         }
 
 
-        List<Order> orders = this.orderRepository.findByTenantContextTenantCodeAndOrderItemsState(tenantCode, orderItemState);
-        List<DomainOrder> list = orders.stream()
-                .map(DomainOrderMapper::toLigthDomain)
-                .toList();
+        List<Object[]> results = orderRepository.findOrderAndItemsByTenantCodeAndItemState(tenantCode, orderItemState);
+        List<DomainOrder> list = new ArrayList<>();
+
+        Map<Order, List<OrderItem>> orderItemMap = new HashMap<>();
+
+        for (Object[] result : results) {
+            Order order = (Order) result[0];
+            OrderItem orderItem = (OrderItem) result[1];
+
+            orderItemMap.computeIfAbsent(order, k -> new ArrayList<>()).add(orderItem);
+        }
+
+        for (Map.Entry<Order, List<OrderItem>> entry : orderItemMap.entrySet()) {
+            Order key = entry.getKey();
+            List<OrderItem> value = entry.getValue();
+            DomainOrder domainOrderWithoutItem = DomainOrderMapper.toDomainOrderWithoutItem(key);
+            List<DomainOrder.DomainOrderItem> orderItems = new ArrayList<>();
+            for (OrderItem orderItem : value) {
+                DomainOrder.DomainOrderItem ligthDomainOrderItem = DomainOrderMapper.toLigthDomainOrderItem(orderItem);
+                orderItems.add(ligthDomainOrderItem);
+            }
+            domainOrderWithoutItem.setItems(orderItems);
+            list.add(domainOrderWithoutItem);
+        }
+
         return Optional.of(list);
     }
 
@@ -91,6 +113,19 @@ public class OrderAdapter implements OrderPort {
                 .map(x -> DomainRefTable.builder().name(x.getName()).build())
                 .toList();
         return Optional.of(list);
+    }
+
+    @Override
+    public boolean isOrderItemOfTenant(Long id, String tenantCode) {
+        return this.orderItemRepository.isOrderItemOfTenantCode(id, tenantCode);
+    }
+
+    @Override
+    public void rejectOrderItem(Long id) throws ServiceException {
+        OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                "No OrderItem found with id " + id));
+        orderItem.setState(OrderItemState.REJECTED);
+        this.orderItemRepository.save(orderItem);
     }
 
     private void createAndSetOrderItems(Order order, Currency currency, List<CreateOrderItem> orderItems) throws ServiceException {

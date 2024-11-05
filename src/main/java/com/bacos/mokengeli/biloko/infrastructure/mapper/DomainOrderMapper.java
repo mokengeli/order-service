@@ -33,6 +33,26 @@ public class DomainOrderMapper {
 
     }
 
+    public static DomainOrder toDomainOrderWithoutItem(Order order) {
+        Currency currency = order.getCurrency();
+        List<OrderItem> items = order.getItems();
+
+        return DomainOrder
+                .builder()
+                .id(order.getId())
+                .tenantCode(order.getTenantContext().getTenantCode())
+                .refTable(order.getRefTable().getName())
+                .currency(DomainCurrency.builder()
+                        .code(currency.getCode())
+                        .label(currency.getLabel())
+                        .id(currency.getId())
+
+                        .build())
+                .totalPrice(order.getTotalPrice())
+                .build();
+
+    }
+
     public static DomainOrder toLigthDomain(Order order) {
         Currency currency = order.getCurrency();
         List<OrderItem> items = order.getItems();

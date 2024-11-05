@@ -9,6 +9,7 @@ import com.bacos.mokengeli.biloko.presentation.CreateOrderRequest;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,6 +45,17 @@ public class OrderController {
     public List<DomainOrder> getOrdersByState(@RequestParam(name = "state") String state) {
         try {
             return orderService.getOrderByState(state);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+
+    }
+
+    @PreAuthorize("hasAuthority('REJECT_ORDER_ITEM')")
+    @PutMapping("/dish/reject")
+    public void rejectDish(@RequestParam("id") Long id) {
+        try {
+            orderService.rejectOrderItem(id);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }

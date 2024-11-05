@@ -12,7 +12,13 @@ import java.util.Optional;
 public interface OrderPort {
     Optional<DomainOrder> createOrder(CreateOrder order) throws ServiceException;
 
-    Optional<List<DomainOrder>>  getOrdersByState(OrderItemState orderState, String tenantCode) throws ServiceException;
+    Optional<List<DomainOrder>> getOrdersByState(OrderItemState orderState, String tenantCode) throws ServiceException;
+
     boolean isRefTableBelongToTenant(String refTableName, String tenantCode);
+
     Optional<List<DomainRefTable>> getRefTablesByTenantCode(String tenantCode);
+
+    boolean isOrderItemOfTenant(Long id, String tenantCode);
+
+    void rejectOrderItem(Long id) throws ServiceException;
 }

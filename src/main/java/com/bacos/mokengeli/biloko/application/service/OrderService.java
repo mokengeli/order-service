@@ -114,4 +114,25 @@ public class OrderService {
         }
         return totalPrice;
     }
+
+
+    public void rejectOrderItem(Long id) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        boolean isOrderItemOfTenant = this.orderPort.isOrderItemOfTenant(id, connectedUser.getTenantCode());
+        if (!isOrderItemOfTenant) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to reject orderItem [{}] of other tenant code [{}]", errorId,
+                    connectedUser.getEmployeeNumber(), id, connectedUser.getTenantCode());
+            throw new ServiceException(errorId, "A problem occured with the dish.");
+        }
+        try {
+            this.orderPort.rejectOrderItem(id);
+        } catch (ServiceException e) {
+            log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
+                    connectedUser.getEmployeeNumber(), e.getMessage());
+            throw new ServiceException(e.getTechnicalId(), "An internal error occurred");
+        }
+
+
+    }
 }
