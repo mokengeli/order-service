@@ -41,6 +41,11 @@ public class OrderController {
         }
     }
 
+    /**
+     *
+     * @param state state of orderItems to retrieve
+     * @return
+     */
     @GetMapping("")
     public List<DomainOrder> getOrdersByState(@RequestParam(name = "state") String state) {
         try {
@@ -51,6 +56,10 @@ public class OrderController {
 
     }
 
+    /**
+     *
+     * @param id: orderItem to reject
+     */
     @PreAuthorize("hasAuthority('REJECT_ORDER_ITEM')")
     @PutMapping("/dish/reject")
     public void rejectDish(@RequestParam("id") Long id) {
@@ -59,6 +68,19 @@ public class OrderController {
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
+    }
 
+    /**
+     *
+     * @param id: id of orderItem to cook
+     */
+    @PreAuthorize("hasAuthority('COOK_DISH')")
+    @PutMapping("/dish/cook")
+    public void prepareOrderItem(@RequestParam("id") Long id) {
+        try {
+            orderService.prepareOrderItem(id);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
     }
 }

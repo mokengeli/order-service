@@ -25,17 +25,17 @@ public class DishAdapter implements DishPort {
     private final TenantContextRepository tenantContextRepository;
     private final DishProductRepository dishProductRepository;
     private final DishCategoryRepository dishCategoryRepository;
-    private final ProductRepository productRepository;
+    private final InventoryService inventoryService;
     private final CategoryRepository categoryRepository;
     private final CurrencyRepository currencyRepository;
 
     @Autowired
-    public DishAdapter(DishRepository dishRepository, TenantContextRepository tenantContextRepository, DishProductRepository dishProductRepository, DishCategoryRepository dishCategoryRepository, ProductRepository productRepository, CategoryRepository categoryRepository, CurrencyRepository currencyRepository) {
+    public DishAdapter(DishRepository dishRepository, TenantContextRepository tenantContextRepository, DishProductRepository dishProductRepository, DishCategoryRepository dishCategoryRepository, InventoryService inventoryService, CategoryRepository categoryRepository, CurrencyRepository currencyRepository) {
         this.dishRepository = dishRepository;
         this.tenantContextRepository = tenantContextRepository;
         this.dishProductRepository = dishProductRepository;
         this.dishCategoryRepository = dishCategoryRepository;
-        this.productRepository = productRepository;
+        this.inventoryService = inventoryService;
         this.categoryRepository = categoryRepository;
         this.currencyRepository = currencyRepository;
     }
@@ -79,7 +79,7 @@ public class DishAdapter implements DishPort {
     private List<DishProduct> createDishProducts(List<DomainDishProduct> domainDishProducts, Dish dish) throws ServiceException {
         List<DishProduct> dishProducts = new ArrayList<>();
         for (DomainDishProduct domainDishProduct : domainDishProducts) {
-            Product product = productRepository.findById(domainDishProduct.getProductId())
+            Product product = inventoryService.findById(domainDishProduct.getProductId())
                     .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                             "No article found with the given id " + domainDishProduct.getProductId()));
 
@@ -135,7 +135,7 @@ public class DishAdapter implements DishPort {
         List<Long> ids = dishProducts.stream().map(DishProduct::getProductId)
                 .toList();
 
-        Optional<List<Product>> products = this.productRepository.findByIds(ids);
+        Optional<List<Product>> products = this.inventoryService.findByIds(ids);
         DomainDish domainDish = DishMapper.toDomain(dish);
         List<DomainDishProduct> domainDishProducts = new ArrayList<>();
         products.ifPresent(productList -> productList.forEach(product -> {

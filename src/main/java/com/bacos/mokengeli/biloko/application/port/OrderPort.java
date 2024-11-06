@@ -21,4 +21,6 @@ public interface OrderPort {
     boolean isOrderItemOfTenant(Long id, String tenantCode);
 
     void rejectOrderItem(Long id) throws ServiceException;
+
+    void prepareOrderItem(Long id) throws ServiceException;
 }

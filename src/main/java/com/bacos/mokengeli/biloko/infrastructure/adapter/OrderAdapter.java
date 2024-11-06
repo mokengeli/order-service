@@ -26,16 +26,18 @@ public class OrderAdapter implements OrderPort {
     private final DishRepository dishRepository;
     private final RefTableRepository refTableRepository;
     private final OrderItemRepository orderItemRepository;
+    private final InventoryService inventoryService;
 
     @Autowired
     public OrderAdapter(OrderRepository orderRepository, CurrencyRepository currencyRepository,
-                        TenantContextRepository tenantContextRepository, DishRepository dishRepository, RefTableRepository refTableRepository, OrderItemRepository orderItemRepository) {
+                        TenantContextRepository tenantContextRepository, DishRepository dishRepository, RefTableRepository refTableRepository, OrderItemRepository orderItemRepository, InventoryService inventoryService) {
         this.orderRepository = orderRepository;
         this.currencyRepository = currencyRepository;
         this.tenantContextRepository = tenantContextRepository;
         this.dishRepository = dishRepository;
         this.refTableRepository = refTableRepository;
         this.orderItemRepository = orderItemRepository;
+        this.inventoryService = inventoryService;
     }
 
     @Transactional
@@ -125,6 +127,23 @@ public class OrderAdapter implements OrderPort {
         OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                 "No OrderItem found with id " + id));
         orderItem.setState(OrderItemState.REJECTED);
+        this.orderItemRepository.save(orderItem);
+    }
+
+    @Override
+    public void prepareOrderItem(Long id) throws ServiceException {
+        OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                "No OrderItem found with id " + id));
+        Dish dish = orderItem.getDish();
+        List<DishProduct> dishProducts = dish.getDishProducts();
+        List<ActionArticleRequest> actionArticleRequests = new ArrayList<>();
+        for (DishProduct dishProduct : dishProducts) {
+            ActionArticleRequest actionArticleRequest = ActionArticleRequest.builder()
+                    .productId(dishProduct.getId()).quantity(dishProduct.getQuantity()).build();
+            actionArticleRequests.add(actionArticleRequest);
+        }
+        this.inventoryService.removeArticle(actionArticleRequests);
+        orderItem.setState(OrderItemState.READY);
         this.orderItemRepository.save(orderItem);
     }
 
