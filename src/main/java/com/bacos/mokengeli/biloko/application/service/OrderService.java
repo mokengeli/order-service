@@ -114,42 +114,27 @@ public class OrderService {
         }
         return totalPrice;
     }
-
-
-    public void rejectOrderItem(Long id) throws ServiceException {
+    
+    public void changeOrderItemState(Long id, OrderItemState orderItemState) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
         boolean isOrderItemOfTenant = this.orderPort.isOrderItemOfTenant(id, connectedUser.getTenantCode());
         if (!isOrderItemOfTenant) {
             String errorId = UUID.randomUUID().toString();
-            log.error("[{}]: User [{}] try to reject orderItem [{}] of other tenant code [{}]", errorId,
-                    connectedUser.getEmployeeNumber(), id, connectedUser.getTenantCode());
+            log.error("[{}]: User [{}] try to [{}] orderItem [{}] of other tenant code [{}]", errorId,
+                    connectedUser.getEmployeeNumber(), orderItemState, id, connectedUser.getTenantCode());
             throw new ServiceException(errorId, "A problem occured with the dish.");
         }
         try {
-            this.orderPort.rejectOrderItem(id);
+            if (OrderItemState.READY.equals(orderItemState)) {
+                this.orderPort.prepareOrderItem(id);
+            } else {
+                this.orderPort.changeOrderItemState(id, orderItemState);
+            }
+
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
                     connectedUser.getEmployeeNumber(), e.getMessage());
             throw new ServiceException(e.getTechnicalId(), "An internal error occurred");
         }
-    }
-
-    public void prepareOrderItem(Long id) throws ServiceException {
-        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
-        boolean isOrderItemOfTenant = this.orderPort.isOrderItemOfTenant(id, connectedUser.getTenantCode());
-        if (!isOrderItemOfTenant) {
-            String errorId = UUID.randomUUID().toString();
-            log.error("[{}]: User [{}] try to cook orderItem [{}] of other tenant code [{}]", errorId,
-                    connectedUser.getEmployeeNumber(), id, connectedUser.getTenantCode());
-            throw new ServiceException(errorId, "A problem occured with the dish.");
-        }
-        try {
-            this.orderPort.prepareOrderItem(id);
-        } catch (ServiceException e) {
-            log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
-                    connectedUser.getEmployeeNumber(), e.getMessage());
-            throw new ServiceException(e.getTechnicalId(), "An internal error occurred");
-        }
-
     }
 }

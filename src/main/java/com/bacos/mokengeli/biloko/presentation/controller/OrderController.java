@@ -2,6 +2,7 @@ package com.bacos.mokengeli.biloko.presentation.controller;
 
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
+import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.OrderService;
@@ -42,7 +43,6 @@ public class OrderController {
     }
 
     /**
-     *
      * @param state state of orderItems to retrieve
      * @return
      */
@@ -57,28 +57,52 @@ public class OrderController {
     }
 
     /**
-     *
      * @param id: orderItem to reject
      */
-    @PreAuthorize("hasAuthority('REJECT_ORDER_ITEM')")
+    @PreAuthorize("hasAuthority('REJECT_DISH')")
     @PutMapping("/dish/reject")
     public void rejectDish(@RequestParam("id") Long id) {
         try {
-            orderService.rejectOrderItem(id);
+            orderService.changeOrderItemState(id, OrderItemState.REJECTED);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
     }
 
     /**
-     *
      * @param id: id of orderItem to cook
      */
     @PreAuthorize("hasAuthority('COOK_DISH')")
     @PutMapping("/dish/cook")
     public void prepareOrderItem(@RequestParam("id") Long id) {
         try {
-            orderService.prepareOrderItem(id);
+            orderService.changeOrderItemState(id, OrderItemState.READY);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    /**
+     * @param id: orderItem to reject
+     */
+    @PreAuthorize("hasAuthority('SERVE_DISH')")
+    @PutMapping("/dish/served")
+    public void servedDish(@RequestParam("id") Long id) {
+        try {
+            orderService.changeOrderItemState(id, OrderItemState.SERVED);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    /**
+     * @param id: orderItem to reject
+     */
+    @PreAuthorize("hasAuthority('REGISTER_PAY_DISH')")
+    @PutMapping("/dish/paid")
+    public void paidDish(@RequestParam("id") Long id) {
+        try {
+            orderService.changeOrderItemState(id, OrderItemState.PAID);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }

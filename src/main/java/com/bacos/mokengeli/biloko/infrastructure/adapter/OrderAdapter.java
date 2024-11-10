@@ -122,11 +122,12 @@ public class OrderAdapter implements OrderPort {
         return this.orderItemRepository.isOrderItemOfTenantCode(id, tenantCode);
     }
 
-    @Override
-    public void rejectOrderItem(Long id) throws ServiceException {
+
+
+    private void changeStateAndSave(Long id, OrderItemState orderItemState) throws ServiceException {
         OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                 "No OrderItem found with id " + id));
-        orderItem.setState(OrderItemState.REJECTED);
+        orderItem.setState(orderItemState);
         this.orderItemRepository.save(orderItem);
     }
 
@@ -144,6 +145,16 @@ public class OrderAdapter implements OrderPort {
         }
         this.inventoryService.removeArticle(actionArticleRequests);
         orderItem.setState(OrderItemState.READY);
+        this.orderItemRepository.save(orderItem);
+    }
+
+
+
+    @Override
+    public void changeOrderItemState(Long id, OrderItemState orderItemState) throws ServiceException {
+        OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                "No OrderItem found with id " + id));
+        orderItem.setState(orderItemState);
         this.orderItemRepository.save(orderItem);
     }
 
