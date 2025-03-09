@@ -1,6 +1,7 @@
 package com.bacos.mokengeli.biloko.application.service;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
+import com.bacos.mokengeli.biloko.application.domain.DomainDishProduct;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
@@ -52,6 +53,12 @@ public class DishService {
             throw new ServiceException(errorId, "currency is mandatory");
         }
 
+        List<Long> productIds = dish.getDishProducts().stream().map(DomainDishProduct::getProductId).toList();
+        boolean isProductOk = this.dishPort.checkIfProductIsOk(productIds);
+        if (!isProductOk) {
+            String errorId = UUID.randomUUID().toString();
+            throw new ServiceException(errorId, "Can not create dish because of issue with products.");
+        }
         if (!this.userAppService.isAdminUser()
                 && !dish.getTenantCode().equals(connectedUser.getTenantCode())) {
             String errorId = UUID.randomUUID().toString();

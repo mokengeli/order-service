@@ -10,8 +10,8 @@ import java.util.Objects;
 @NoArgsConstructor
 public class MenuDishId implements Serializable {
 
-    private Long menu;
-    private Long dish;
+    private Long menu; // Should match `menu` in `MenuDish` BE CAREFULL WHEN RENAMEMING
+    private Long dish; // Should match `dish` in `MenuDish`
 
     @Override
     public boolean equals(Object o) {

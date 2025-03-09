@@ -23,12 +23,14 @@ public class OrderService {
     private final OrderPort orderPort;
     private final UserAppService userAppService;
     private final DishPort dishPort;
+    private final OrderNotificationService orderNotificationService;
 
     @Autowired
-    public OrderService(OrderPort orderPort, UserAppService userAppService, DishPort dishPort) {
+    public OrderService(OrderPort orderPort, UserAppService userAppService, DishPort dishPort, OrderNotificationService orderNotificationService) {
         this.orderPort = orderPort;
         this.userAppService = userAppService;
         this.dishPort = dishPort;
+        this.orderNotificationService = orderNotificationService;
     }
 
     public DomainOrder createOrder(Long currencyId, String refTable, List<CreateOrderItem> createOrderItems) throws ServiceException {
@@ -70,6 +72,9 @@ public class OrderService {
                     connectedUser.getEmployeeNumber());
             throw new ServiceException(errorId, "An internal error occurred");
         }
+        this.orderNotificationService.notifyStateChange(order.get().getId(), OrderItemState.PENDING.name(),
+                OrderItemState.PENDING.name());
+
         return order.get();
     }
 
@@ -114,7 +119,7 @@ public class OrderService {
         }
         return totalPrice;
     }
-    
+
     public void changeOrderItemState(Long id, OrderItemState orderItemState) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
         boolean isOrderItemOfTenant = this.orderPort.isOrderItemOfTenant(id, connectedUser.getTenantCode());
@@ -125,11 +130,14 @@ public class OrderService {
             throw new ServiceException(errorId, "A problem occured with the dish.");
         }
         try {
+            OrderItemState currentState = this.orderPort.getOrderItemState(id);
+
             if (OrderItemState.READY.equals(orderItemState)) {
                 this.orderPort.prepareOrderItem(id);
             } else {
                 this.orderPort.changeOrderItemState(id, orderItemState);
             }
+            this.orderNotificationService.notifyStateChange(id, currentState.name(), orderItemState.name());
 
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),

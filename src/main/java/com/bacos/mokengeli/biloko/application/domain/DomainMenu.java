@@ -14,5 +14,5 @@ public class DomainMenu {
     private Double price;
     private String tenantCode;
     private DomainCurrency currency;
-    private List<DomainDish> dishes;
+    private List<DomainMenuCategoryOptions> compositions;
 }

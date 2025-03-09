@@ -41,6 +41,10 @@ public class Menu {
 
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL)
     private List<MenuDish> menuDishes;
+
+    @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL)
+    private List<MenuCategoryOptions> menuCategoryOptions;
+
     @ManyToOne
     @JoinColumn(name = "currency_id", nullable = false)
     private Currency currency;

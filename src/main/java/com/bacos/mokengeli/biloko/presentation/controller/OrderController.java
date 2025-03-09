@@ -5,6 +5,8 @@ import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
+import com.bacos.mokengeli.biloko.application.port.OrderNotificationPort;
+import com.bacos.mokengeli.biloko.application.service.OrderNotificationService;
 import com.bacos.mokengeli.biloko.application.service.OrderService;
 import com.bacos.mokengeli.biloko.presentation.CreateOrderRequest;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
@@ -35,8 +37,8 @@ public class OrderController {
                     .note(x.getNote())
                     .dishId(x.getDishId())
                     .build()).toList();
-            return orderService.createOrder(request.getCurrencyId(),
-                    request.getRefTable(), createOrderItems);
+
+            return orderService.createOrder(request.getCurrencyId(), request.getRefTable(), createOrderItems);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
@@ -64,6 +66,7 @@ public class OrderController {
     public void rejectDish(@RequestParam("id") Long id) {
         try {
             orderService.changeOrderItemState(id, OrderItemState.REJECTED);
+
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
@@ -77,6 +80,7 @@ public class OrderController {
     public void prepareOrderItem(@RequestParam("id") Long id) {
         try {
             orderService.changeOrderItemState(id, OrderItemState.READY);
+
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
@@ -90,6 +94,7 @@ public class OrderController {
     public void servedDish(@RequestParam("id") Long id) {
         try {
             orderService.changeOrderItemState(id, OrderItemState.SERVED);
+
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
@@ -103,6 +108,7 @@ public class OrderController {
     public void paidDish(@RequestParam("id") Long id) {
         try {
             orderService.changeOrderItemState(id, OrderItemState.PAID);
+
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }

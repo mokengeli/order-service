@@ -64,8 +64,19 @@ CREATE TABLE order_service_schema.menus (
 CREATE TABLE order_service_schema.menu_dishes (
                                                   menu_id INT NOT NULL REFERENCES order_service_schema.menus(id) ON DELETE CASCADE,
                                                   dish_id INT NOT NULL REFERENCES order_service_schema.dishes(id),
+                                                  category VARCHAR(20) NOT NULL,
                                                   PRIMARY KEY (menu_id, dish_id)
 );
+
+-- New Table: Menu Category Options
+-- This table specifies the maximum number of choices allowed for each category within a menu.
+CREATE TABLE order_service_schema.menu_category_options (
+                                                            menu_id INT NOT NULL REFERENCES order_service_schema.menus(id) ON DELETE CASCADE,
+                                                            category VARCHAR(20) NOT NULL,
+                                                            max_choices INT NOT NULL,
+                                                            PRIMARY KEY (menu_id, category)
+);
+
 
 -- Dish Price History Table (for price versioning)
 CREATE TABLE order_service_schema.dish_price_history (

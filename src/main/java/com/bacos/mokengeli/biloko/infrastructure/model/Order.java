@@ -1,12 +1,10 @@
 package com.bacos.mokengeli.biloko.infrastructure.model;
 
-import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

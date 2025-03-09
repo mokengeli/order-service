@@ -23,4 +23,6 @@ public interface OrderPort {
     void prepareOrderItem(Long id) throws ServiceException;
 
     void changeOrderItemState(Long id, OrderItemState orderItemState) throws ServiceException;
+
+    OrderItemState getOrderItemState(Long id) throws ServiceException;
 }

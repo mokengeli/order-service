@@ -153,4 +153,9 @@ public class DishAdapter implements DishPort {
     public Double getDishPrice(Long dishId) {
         return this.dishRepository.findPriceById(dishId);
     }
+
+    @Override
+    public boolean checkIfProductIsOk(List<Long> productIds) {
+       return  this.inventoryService.isProductExistAndOfTheSomeOrganisation(productIds);
+    }
 }

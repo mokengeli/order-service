@@ -12,10 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -41,7 +39,8 @@ public class MenuService {
                     connectedUser.getTenantCode(), menu.getTenantCode());
             throw new ServiceException(errorId, "You can't add item owning by another partner");
         }
-        List<Long> dishIds = menu.getDishes().stream().map(DomainDish::getId).toList();
+        List<Long> dishIds = getDishIdsOrThrowIfDuplicates(menu);
+
         boolean allDishesOfTenant = this.dishPort.isAllDishesOfTenant(menu.getTenantCode(), dishIds);
         if (!allDishesOfTenant) {
             String errorId = UUID.randomUUID().toString();
@@ -62,5 +61,29 @@ public class MenuService {
         String tenantCode = connectedUser.getTenantCode();
         Optional<List<DomainMenu>> optDishes = this.menuPort.findAllMenusByTenant(tenantCode);
         return optDishes.orElseGet(ArrayList::new);
+    }
+
+    public List<Long> getDishIdsOrThrowIfDuplicates(DomainMenu menu) throws ServiceException {
+        Set<Long> uniqueIds = new HashSet<>();
+        Set<Long> duplicateIds = new HashSet<>();
+
+        // Collect IDs while tracking duplicates
+        List<Long> ids = menu.getCompositions().stream()
+                .flatMap(x -> x.getDishes().stream())
+                .map(DomainDish::getId)
+                .peek(id -> {
+                    if (!uniqueIds.add(id)) {
+                        duplicateIds.add(id);
+                    }
+                })
+                .collect(Collectors.toList());
+
+        // If any duplicates found, throw an exception
+        if (!duplicateIds.isEmpty()) {
+            throw new ServiceException(UUID.randomUUID().toString(), "A dish can be in different part of the menu: dishIds = " + duplicateIds);
+        }
+
+        // If no duplicates, return the list of IDs
+        return ids;
     }
 }

@@ -10,5 +10,12 @@ public class CreateMenuRequest {
     private Double price;
     private String tenantCode;
     private Long currencyId;
-    private List<Long> dishIds;  // List of dish IDs that are part of the menu
+    private List<CompositionMenuRequest> compositions;
+
+    @Data
+    public static class CompositionMenuRequest {
+        private List<Long> dishIds;  // List of dish IDs that are part of the menu
+        private String category;
+        private int maxChoice;
+    }
 }

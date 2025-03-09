@@ -23,6 +23,17 @@ public class DishMapper {
                 .build();
     }
 
+    public DomainDish toDomainLigth(Dish dish) {
+        if (dish == null) {
+            return null;
+        }
+
+        return DomainDish.builder()
+                .id(dish.getId())
+                .name(dish.getName())
+                .build();
+    }
+
     public DomainDish toDomain(Dish dish) {
         if (dish == null) {
             return null;

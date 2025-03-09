@@ -1,22 +1,19 @@
 package com.bacos.mokengeli.biloko.infrastructure.model;
 
-import com.bacos.mokengeli.biloko.application.domain.MenuCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+@Entity
+@Table(name = "menu_category_options")
+@IdClass(MenuCategoryOptionsId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Entity
-@Table(name = "menu_dishes")
-@IdClass(MenuDishId.class)
-public class MenuDish implements Serializable {
+public class MenuCategoryOptions implements Serializable {
 
     @Id
     @ManyToOne
@@ -24,12 +21,9 @@ public class MenuDish implements Serializable {
     private Menu menu;
 
     @Id
-    @ManyToOne
-    @JoinColumn(name = "dish_id", nullable = false)
-    private Dish dish;
-
     @Column(name = "category", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private MenuCategory category;
+    private String category;
 
+    @Column(name = "max_choices", nullable = false)
+    private int maxChoices;
 }

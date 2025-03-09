@@ -1,6 +1,5 @@
 package com.bacos.mokengeli.biloko.infrastructure.repository;
 
-import com.bacos.mokengeli.biloko.infrastructure.model.Dish;
 import com.bacos.mokengeli.biloko.infrastructure.model.Menu;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

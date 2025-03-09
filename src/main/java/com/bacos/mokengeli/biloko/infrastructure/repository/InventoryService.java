@@ -16,4 +16,6 @@ public interface InventoryService {
     Optional<List<Product>> findByIds(@RequestParam("ids") List<Long> ids);
     @PutMapping("/api/inventory/article/remove")
     void removeArticle(@RequestBody List<ActionArticleRequest> removeProductRequests);
+    @GetMapping("/api/inventory/product/exist-in-orga")
+    boolean isProductExistAndOfTheSomeOrganisation(@RequestParam("ids") List<Long> productIds);
 }

@@ -3,6 +3,7 @@ package com.bacos.mokengeli.biloko.presentation.controller;
 import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainMenu;
+import com.bacos.mokengeli.biloko.application.domain.DomainMenuCategoryOptions;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.MenuService;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
@@ -32,10 +33,7 @@ public class MenuController {
                     .tenantCode(request.getTenantCode())
                     .name(request.getName())
                     .currency(DomainCurrency.builder().id(request.getCurrencyId()).build())
-                    .dishes(request.getDishIds().stream()
-                            .map(x -> DomainDish.builder().id(x).build()
-                            )
-                            .toList())
+                    .compositions(createMenuComposition(request.getCompositions()))
                     .build();
 
             return menuService.createMenu(menu);
@@ -43,6 +41,15 @@ public class MenuController {
                 ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
+    }
+
+    private List<DomainMenuCategoryOptions> createMenuComposition(List<CreateMenuRequest.CompositionMenuRequest> compositions) {
+        return compositions.stream()
+                .map(x -> DomainMenuCategoryOptions.builder().category(x.getCategory()).maxChoice(x.getMaxChoice())
+                        .dishes(x.getDishIds().stream()
+                                .map(c -> DomainDish.builder().id(c).build()
+                                )
+                                .toList()).build()).toList();
     }
 
     @GetMapping

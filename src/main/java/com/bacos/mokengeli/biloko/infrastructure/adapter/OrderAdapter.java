@@ -123,7 +123,6 @@ public class OrderAdapter implements OrderPort {
     }
 
 
-
     private void changeStateAndSave(Long id, OrderItemState orderItemState) throws ServiceException {
         OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                 "No OrderItem found with id " + id));
@@ -140,7 +139,7 @@ public class OrderAdapter implements OrderPort {
         List<ActionArticleRequest> actionArticleRequests = new ArrayList<>();
         for (DishProduct dishProduct : dishProducts) {
             ActionArticleRequest actionArticleRequest = ActionArticleRequest.builder()
-                    .productId(dishProduct.getId()).quantity(dishProduct.getQuantity()).build();
+                    .productId(dishProduct.getProductId()).quantity(dishProduct.getQuantity()).build();
             actionArticleRequests.add(actionArticleRequest);
         }
         this.inventoryService.removeArticle(actionArticleRequests);
@@ -149,13 +148,19 @@ public class OrderAdapter implements OrderPort {
     }
 
 
-
     @Override
     public void changeOrderItemState(Long id, OrderItemState orderItemState) throws ServiceException {
         OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                 "No OrderItem found with id " + id));
         orderItem.setState(orderItemState);
         this.orderItemRepository.save(orderItem);
+    }
+
+    @Override
+    public OrderItemState getOrderItemState(Long id) throws ServiceException {
+        OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                "No OrderItem found with id " + id));
+        return orderItem.getState();
     }
 
     private void createAndSetOrderItems(Order order, Currency currency, List<CreateOrderItem> orderItems) throws ServiceException {
