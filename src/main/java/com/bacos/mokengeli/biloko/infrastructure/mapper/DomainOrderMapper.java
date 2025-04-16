@@ -26,8 +26,8 @@ public class DomainOrderMapper {
                         .code(currency.getCode())
                         .label(currency.getLabel())
                         .id(currency.getId())
-
                         .build())
+                .orderDate(order.getCreatedAt())
                 .totalPrice(order.getTotalPrice())
                 .build();
 
@@ -42,11 +42,11 @@ public class DomainOrderMapper {
                 .id(order.getId())
                 .tenantCode(order.getTenantContext().getTenantCode())
                 .refTable(order.getRefTable().getName())
+                .orderDate(order.getCreatedAt())
                 .currency(DomainCurrency.builder()
                         .code(currency.getCode())
                         .label(currency.getLabel())
                         .id(currency.getId())
-
                         .build())
                 .totalPrice(order.getTotalPrice())
                 .build();
@@ -83,6 +83,7 @@ public class DomainOrderMapper {
                 .dishId(orderItem.getDish().getId())
                 .dishName(orderItem.getDish().getName())
                 .unitPrice(orderItem.getUnitPrice())
+                .orderItemDate(orderItem.getCreatedAt())
                 .build();
     }
 
@@ -93,6 +94,7 @@ public class DomainOrderMapper {
                 .state(orderItem.getState())
                 .note(orderItem.getNote())
                 .unitPrice(orderItem.getUnitPrice())
+                .orderItemDate(orderItem.getCreatedAt())
                 .build();
     }
 }

@@ -3,6 +3,7 @@ package com.bacos.mokengeli.biloko.application.domain;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Builder
@@ -15,6 +16,7 @@ public class DomainOrder {
     private List<DomainOrderItem> items;
     private double totalPrice;
     private DomainCurrency currency;
+    private LocalDateTime orderDate;
 
     @Builder
     @Data
@@ -26,6 +28,7 @@ public class DomainOrder {
         private int count;
         private OrderItemState state;
         private Double unitPrice;
+        private LocalDateTime orderItemDate;
     }
 
 }

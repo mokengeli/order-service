@@ -35,9 +35,10 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())  // Désactivation de la protection CSRF, car on utilise JWT
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers( "/public/**").permitAll()  // Routes publiques
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()  // Toutes les autres routes nécessitent une authentification
                 )
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // CORS configuration
+                //.cors(cors -> cors.configurationSource(corsConfigurationSource()))  // CORS configuration
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // Pas de sessions, JWT uniquement
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)  // Ajouter le filtre JWT
                 .build();

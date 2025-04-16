@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -23,11 +24,18 @@ public class CategoryService {
         this.userAppService = userAppService;
     }
 
-    public List<DomainCategory> getAllCategories() throws ServiceException {
+    public List<DomainCategory> getAllCategories(String tenantCode) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        if (!this.userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get categories of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
 
+            throw new ServiceException(uuid, "An internal error occurred");
+        }
         try {
-            return categoryPort.getAllCategoriesOfTenant(connectedUser.getTenantCode());
+            return categoryPort.getAllCategoriesOfTenant(tenantCode);
 
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),

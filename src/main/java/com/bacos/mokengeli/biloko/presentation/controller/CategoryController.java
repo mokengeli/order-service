@@ -22,10 +22,10 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<DomainCategory>> getAllCategories() {
+    @GetMapping()
+    public ResponseEntity<List<DomainCategory>> getAllCategories(@RequestParam("code")String tenantCode) {
         try {
-            List<DomainCategory> categories = categoryService.getAllCategories();
+            List<DomainCategory> categories = categoryService.getAllCategories(tenantCode);
             return ResponseEntity.ok(categories);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());

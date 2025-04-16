@@ -5,7 +5,7 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/order_service_db
+    url: jdbc:postgresql://localhost:5432/mokengeli_biloko_db
     username: user1
     password: password
     driver-class-name: org.postgresql.Driver
@@ -31,3 +31,8 @@ eureka:
     register-with-eureka: true  # Le client s'enregistre dans le registre
   instance:
     prefer-ip-address: true  # Utilise l'adresse IP pour l'enregistrement (utile pour les environnements containerisés)
+
+
+springdoc:
+  api-docs:
+    group: order
