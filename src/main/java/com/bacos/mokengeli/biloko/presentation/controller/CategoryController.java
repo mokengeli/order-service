@@ -3,6 +3,7 @@ package com.bacos.mokengeli.biloko.presentation.controller;
 import com.bacos.mokengeli.biloko.application.domain.DomainCategory;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.CategoryService;
+import com.bacos.mokengeli.biloko.presentation.controller.model.AssignCategoryToTenantRequest;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,8 +23,8 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
-    @GetMapping()
-    public ResponseEntity<List<DomainCategory>> getAllCategories(@RequestParam("code")String tenantCode) {
+    @GetMapping
+    public ResponseEntity<List<DomainCategory>> getAllCategories(@RequestParam("code") String tenantCode) {
         try {
             List<DomainCategory> categories = categoryService.getAllCategories(tenantCode);
             return ResponseEntity.ok(categories);
@@ -32,9 +33,35 @@ public class CategoryController {
         }
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<DomainCategory>> getAllCategories() {
+        try {
+            List<DomainCategory> categories = categoryService.getAllCategories();
+            return ResponseEntity.ok(categories);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    @PostMapping("/assign")
+    public void assignCategoryToTenant(@RequestBody AssignCategoryToTenantRequest
+                                                                       assignCategoryToTenantRequest) throws ServiceException {
+        try {
+            categoryService.assignCategoryToTenant(assignCategoryToTenantRequest.getTenantCode(),
+                    assignCategoryToTenantRequest.getCategoryId());
+
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
     @PostMapping
     public ResponseEntity<DomainCategory> createCategory(@RequestBody DomainCategory category) {
-        DomainCategory createdCategory = categoryService.createCategory(category);
-        return ResponseEntity.ok(createdCategory);
+        try {
+            DomainCategory createdCategory = categoryService.createCategory(category);
+            return ResponseEntity.ok(createdCategory);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
     }
 }

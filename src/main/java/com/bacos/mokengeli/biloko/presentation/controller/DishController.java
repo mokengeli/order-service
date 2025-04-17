@@ -10,6 +10,7 @@ import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperEx
 import com.bacos.mokengeli.biloko.presentation.model.CreateDishRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class DishController {
         this.dishService = dishService;
     }
 
+    @PreAuthorize("hasAuthority('CREATE_DISH')")
     @PostMapping
     public DomainDish createDish(@RequestBody CreateDishRequest request) {
         try {

@@ -6,6 +6,7 @@ import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.CategoryPort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class CategoryService {
             log.error("[{}]: User [{}] Tenant [{}] try to get categories of another tenant: {}", uuid,
                     connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
 
-            throw new ServiceException(uuid, "An internal error occurred");
+            throw new ServiceException(uuid, "You don't have permission to get Categories");
         }
         try {
             return categoryPort.getAllCategoriesOfTenant(tenantCode);
@@ -44,8 +45,40 @@ public class CategoryService {
         }
     }
 
-    public DomainCategory createCategory(DomainCategory category) {
-        return categoryPort.addCategory(category);
+    public List<DomainCategory> getAllCategories() throws ServiceException {
+            return categoryPort.getAllCategories();
     }
 
+    public DomainCategory createCategory(DomainCategory category) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        if (!this.userAppService.isAdminUser()) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to create category {} but don't have permission", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), category.getName());
+
+            throw new ServiceException(uuid, "You don't have permission to create Category");
+        }
+        try {
+            return categoryPort.addCategory(category);
+        } catch (DataIntegrityViolationException e) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User[{}] An error Occured. The Category already exist", uuid,
+                    connectedUser.getEmployeeNumber());
+            throw new ServiceException(uuid, "An error Occured. The Category already exist");
+        }
+
+    }
+
+    public void assignCategoryToTenant(String tenantCode, Long categoryId) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        if (!this.userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to assign category {} to another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), categoryId, tenantCode);
+
+            throw new ServiceException(uuid, "You don't have permission to perfom this action");
+        }
+        this.categoryPort.assiginToTenant(categoryId, tenantCode);
+    }
 }
