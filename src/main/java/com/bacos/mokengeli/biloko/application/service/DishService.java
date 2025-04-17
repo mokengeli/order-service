@@ -76,9 +76,18 @@ public class DishService {
 
     }
 
-    public List<DomainDish> getAllDishes() throws ServiceException {
+    public List<DomainDish> getAllDishes(String tenantCode) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
-        Optional<List<DomainDish>> allDishesByTenant = dishPort.findAllDishesByTenant(connectedUser.getTenantCode());
+        if (!this.userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get dishes of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+
+            throw new ServiceException(uuid, "You don't have permission to get dishes");
+        }
+
+        Optional<List<DomainDish>> allDishesByTenant = dishPort.findAllDishesByTenant(tenantCode);
         return allDishesByTenant.orElseGet(ArrayList::new);
     }
 

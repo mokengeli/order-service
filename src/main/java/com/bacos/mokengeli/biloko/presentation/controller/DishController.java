@@ -50,9 +50,9 @@ public class DishController {
     }
 
     @GetMapping
-    public List<DomainDish> getAllDishes() {
+    public List<DomainDish> getAllDishes(@RequestParam("code") String tenantCode) {
         try {
-            return dishService.getAllDishes();
+            return dishService.getAllDishes(tenantCode);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
