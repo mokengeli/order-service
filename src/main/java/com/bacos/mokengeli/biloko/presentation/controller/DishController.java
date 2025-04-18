@@ -26,6 +26,7 @@ public class DishController {
         this.dishService = dishService;
     }
 
+
     @PreAuthorize("hasAuthority('CREATE_DISH')")
     @PostMapping
     public DomainDish createDish(@RequestBody CreateDishRequest request) {

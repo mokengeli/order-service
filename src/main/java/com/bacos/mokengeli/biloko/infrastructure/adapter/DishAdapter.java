@@ -155,7 +155,7 @@ public class DishAdapter implements DishPort {
     }
 
     @Override
-    public boolean checkIfProductIsOk(List<Long> productIds) {
-       return  this.inventoryService.isProductExistAndOfTheSomeOrganisation(productIds);
+    public boolean checkIfProductIsOk(String tenantCode, List<Long> productIds) {
+       return  this.inventoryService.isProductExistAndOfTheSomeOrganisation(tenantCode, productIds);
     }
 }

@@ -54,7 +54,7 @@ public class DishService {
         }
 
         List<Long> productIds = dish.getDishProducts().stream().map(DomainDishProduct::getProductId).toList();
-        boolean isProductOk = this.dishPort.checkIfProductIsOk(productIds);
+        boolean isProductOk = this.dishPort.checkIfProductIsOk(dish.getTenantCode(),productIds);
         if (!isProductOk) {
             String errorId = UUID.randomUUID().toString();
             throw new ServiceException(errorId, "Can not create dish because of issue with products.");

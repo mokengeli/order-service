@@ -17,5 +17,5 @@ public interface InventoryService {
     @PutMapping("/api/inventory/article/remove")
     void removeArticle(@RequestBody List<ActionArticleRequest> removeProductRequests);
     @GetMapping("/api/inventory/product/exist-in-orga")
-    boolean isProductExistAndOfTheSomeOrganisation(@RequestParam("ids") List<Long> productIds);
+    boolean isProductExistAndOfTheSomeOrganisation(@RequestParam("tenant") String tenantCode, @RequestParam("ids") List<Long> productIds);
 }

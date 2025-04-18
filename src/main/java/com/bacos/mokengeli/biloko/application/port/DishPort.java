@@ -13,5 +13,5 @@ public interface DishPort {
     Optional<DomainDish> getDish(Long id) throws ServiceException;
     Double getDishPrice(Long dishId);
 
-    boolean checkIfProductIsOk(List<Long> productIds);
+    boolean checkIfProductIsOk(String tenantCode, List<Long> productIds);
 }
