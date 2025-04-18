@@ -10,6 +10,9 @@ import com.bacos.mokengeli.biloko.infrastructure.model.*;
 import com.bacos.mokengeli.biloko.infrastructure.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -112,13 +115,10 @@ public class DishAdapter implements DishPort {
     }
 
     @Override
-    public Optional<List<DomainDish>> findAllDishesByTenant(String tenantCode) {
-        Optional<List<Dish>> optDish = dishRepository.findByTenantContextTenantCode(tenantCode);
-        if (optDish.isEmpty()) {
-            return Optional.empty();
-        }
-        List<DomainDish> domainDishes = optDish.get().stream().map(DishMapper::toDomain).toList();
-        return Optional.of(domainDishes);
+    public Page<DomainDish> findAllDishesByTenant(String tenantCode, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Dish> pageEntity = dishRepository.findByTenantContextTenantCode(tenantCode, pageable);
+        return pageEntity.map(DishMapper::toDomain);
     }
 
     @Override

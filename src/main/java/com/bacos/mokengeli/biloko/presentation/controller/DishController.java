@@ -9,7 +9,9 @@ import com.bacos.mokengeli.biloko.application.service.DishService;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
 import com.bacos.mokengeli.biloko.presentation.model.CreateDishRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,11 +53,16 @@ public class DishController {
     }
 
     @GetMapping
-    public List<DomainDish> getAllDishes(@RequestParam("code") String tenantCode) {
+    public ResponseEntity<Page<DomainDish>> getAllDishes(
+            @RequestParam("code") String tenantCode,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
         try {
-            return dishService.getAllDishes(tenantCode);
+            Page<DomainDish> dishes = dishService.getAllDishes(tenantCode, page, size);
+            return ResponseEntity.ok(dishes);
         } catch (ServiceException e) {
-            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
     }
 

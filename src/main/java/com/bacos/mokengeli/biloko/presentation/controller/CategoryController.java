@@ -6,6 +6,7 @@ import com.bacos.mokengeli.biloko.application.service.CategoryService;
 import com.bacos.mokengeli.biloko.presentation.controller.model.AssignCategoryToTenantRequest;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,9 +25,12 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DomainCategory>> getAllCategories(@RequestParam("code") String tenantCode) {
+    public ResponseEntity<Page<DomainCategory>> getAllCategories(
+            @RequestParam("code") String tenantCode,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         try {
-            List<DomainCategory> categories = categoryService.getAllCategories(tenantCode);
+            Page<DomainCategory> categories = categoryService.getAllCategories(tenantCode, page, size);
             return ResponseEntity.ok(categories);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
@@ -34,9 +38,11 @@ public class CategoryController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<DomainCategory>> getAllCategories() {
+    public ResponseEntity<Page<DomainCategory>> getAllCategories(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size) {
         try {
-            List<DomainCategory> categories = categoryService.getAllCategories();
+            Page<DomainCategory> categories = categoryService.getAllCategories(page, size);
             return ResponseEntity.ok(categories);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());

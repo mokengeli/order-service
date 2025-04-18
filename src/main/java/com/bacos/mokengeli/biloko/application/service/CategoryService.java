@@ -7,6 +7,7 @@ import com.bacos.mokengeli.biloko.application.port.CategoryPort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,7 +26,7 @@ public class CategoryService {
         this.userAppService = userAppService;
     }
 
-    public List<DomainCategory> getAllCategories(String tenantCode) throws ServiceException {
+    public Page<DomainCategory> getAllCategories(String tenantCode, int page, int size) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
         if (!this.userAppService.isAdminUser() &&
                 !connectedUser.getTenantCode().equals(tenantCode)) {
@@ -36,7 +37,7 @@ public class CategoryService {
             throw new ServiceException(uuid, "You don't have permission to get Categories");
         }
         try {
-            return categoryPort.getAllCategoriesOfTenant(tenantCode);
+            return categoryPort.getAllCategoriesOfTenant(tenantCode, page, size);
 
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
@@ -45,9 +46,10 @@ public class CategoryService {
         }
     }
 
-    public List<DomainCategory> getAllCategories() throws ServiceException {
-            return categoryPort.getAllCategories();
+    public Page<DomainCategory> getAllCategories(int page, int size) throws ServiceException {
+        return categoryPort.getAllCategories(page, size);
     }
+
 
     public DomainCategory createCategory(DomainCategory category) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();

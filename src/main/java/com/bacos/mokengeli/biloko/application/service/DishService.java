@@ -7,6 +7,7 @@ import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -76,19 +77,17 @@ public class DishService {
 
     }
 
-    public List<DomainDish> getAllDishes(String tenantCode) throws ServiceException {
+    public Page<DomainDish> getAllDishes(String tenantCode, int page, int size) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
         if (!this.userAppService.isAdminUser() &&
                 !connectedUser.getTenantCode().equals(tenantCode)) {
             String uuid = UUID.randomUUID().toString();
-            log.error("[{}]: User [{}] Tenant [{}] try to get dishes of another tenant: {}", uuid,
-                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
-
+            log.error("[{}]: User [{}] Tenant [{}] try to get dishes of another tenant: {}",
+                    uuid, connectedUser.getEmployeeNumber(),
+                    connectedUser.getTenantCode(), tenantCode);
             throw new ServiceException(uuid, "You don't have permission to get dishes");
         }
-
-        Optional<List<DomainDish>> allDishesByTenant = dishPort.findAllDishesByTenant(tenantCode);
-        return allDishesByTenant.orElseGet(ArrayList::new);
+        return dishPort.findAllDishesByTenant(tenantCode, page, size);
     }
 
     public DomainDish getDish(Long id) throws ServiceException {

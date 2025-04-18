@@ -2,15 +2,15 @@ package com.bacos.mokengeli.biloko.application.port;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainCategory;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Set;
 
 public interface CategoryPort {
-    List<DomainCategory> getAllCategoriesOfTenant(String tenantCode) throws ServiceException;
+    Page<DomainCategory> getAllCategoriesOfTenant(String tenantCode, int page, int size) throws ServiceException;
     DomainCategory addCategory(DomainCategory category);
 
-    List<DomainCategory> getAllCategories();
-
+    Page<DomainCategory> getAllCategories(int page, int size) throws ServiceException;
     void assiginToTenant(Long categoryId, String tenantCode) throws ServiceException;
 }

@@ -11,6 +11,9 @@ import com.bacos.mokengeli.biloko.infrastructure.repository.CategoryRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.TenantCategoryRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.TenantContextRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -21,22 +24,23 @@ import java.util.stream.Collectors;
 public class CategoryAdapter implements CategoryPort {
 
     private final CategoryRepository categoryRepository;
-    private final TenantCategoryAdapter tenantCategoryAdapter;
     private final TenantCategoryRepository tenantCategoryRepository;
     private final TenantContextRepository tenantContextRepository;
 
     @Autowired
     public CategoryAdapter(CategoryRepository categoryRepository,
-                           TenantCategoryAdapter tenantCategoryAdapter, TenantCategoryRepository tenantCategoryRepository, TenantContextRepository tenantContextRepository) {
+                           TenantCategoryRepository tenantCategoryRepository, TenantContextRepository tenantContextRepository) {
         this.categoryRepository = categoryRepository;
-        this.tenantCategoryAdapter = tenantCategoryAdapter;
         this.tenantCategoryRepository = tenantCategoryRepository;
         this.tenantContextRepository = tenantContextRepository;
     }
 
     @Override
-    public List<DomainCategory> getAllCategoriesOfTenant(String tenantCode) throws ServiceException {
-        return this.tenantCategoryAdapter.getCategories(tenantCode);
+    public Page<DomainCategory> getAllCategoriesOfTenant(String tenantCode, int page, int size) throws ServiceException {
+        Pageable pageable = PageRequest.of(page, size);
+        return tenantCategoryRepository
+                .findByTenantContextTenantCode(tenantCode, pageable)
+                .map(tcCat -> CategoryMapper.toDomain(tcCat.getCategory()));
     }
 
     @Override
@@ -48,12 +52,11 @@ public class CategoryAdapter implements CategoryPort {
     }
 
     @Override
-    public List<DomainCategory> getAllCategories() {
-        List<Category> categories = this.categoryRepository.findAll();
-        if (categories.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return categories.stream().map(CategoryMapper::toDomain).collect(Collectors.toList());
+    public Page<DomainCategory> getAllCategories(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Category> all = categoryRepository.findAll(pageable);
+        return all
+                .map(CategoryMapper::toDomain);
     }
 
     @Override

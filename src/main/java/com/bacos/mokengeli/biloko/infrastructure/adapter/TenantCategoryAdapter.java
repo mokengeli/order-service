@@ -23,18 +23,4 @@ public class TenantCategoryAdapter {
     }
 
 
-    public List<DomainCategory> getCategories(String tenantCode) throws ServiceException {
-        List<TenantContextCategory> tenantCategories = this.tenantCategoryRepository.findByTenantContextTenantCode(tenantCode)
-                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
-                        "Tenant not found with given tenant code " + tenantCode));
-
-        return tenantCategories.stream()
-                .map(x -> DomainCategory.builder()
-                        .id(x.getCategory().getId())
-                        .name(x.getCategory().getName())
-                        .build())
-                .toList();
-    }
-
-
 }
