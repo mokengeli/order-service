@@ -75,4 +75,13 @@ public class DishController {
         }
     }
 
+    /** @GetMapping("/category") public List<DomainDish> getDishByCategory(@RequestParam("id") Long id) {
+    try {
+    return dishService.getDish(id);
+    } catch (ServiceException e) {
+    throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+    }
+    }*/
+
+
 }

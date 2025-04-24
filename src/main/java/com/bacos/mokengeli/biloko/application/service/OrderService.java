@@ -1,6 +1,7 @@
 package com.bacos.mokengeli.biloko.application.service;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
+import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
@@ -144,5 +145,18 @@ public class OrderService {
                     connectedUser.getEmployeeNumber(), e.getMessage());
             throw new ServiceException(e.getTechnicalId(), "An internal error occurred");
         }
+    }
+
+    public List<DomainOrder> getActiveOrdersByTable(Long tableId) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        if (!this.orderPort
+                .isRefTableBelongToTenant(tableId, connectedUser.getTenantCode())) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] of tenant {} don't have the right to get orders for refTableId {}", errorId, connectedUser.getEmployeeNumber(),
+                    connectedUser.getTenantCode(), tableId);
+            throw new ServiceException(errorId, "You can't add item owning by another partener");
+        }
+
+        return this.orderPort.getActiveOrdersByTable(tableId);
     }
 }

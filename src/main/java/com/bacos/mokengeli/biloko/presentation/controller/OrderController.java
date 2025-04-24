@@ -2,6 +2,7 @@ package com.bacos.mokengeli.biloko.presentation.controller;
 
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
+import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -109,6 +110,15 @@ public class OrderController {
         try {
             orderService.changeOrderItemState(id, OrderItemState.PAID);
 
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    @GetMapping("/active")
+    public List<DomainOrder> getActiveOrdersByTable(@RequestParam("tableId") Long tableId) {
+        try {
+            return this.orderService.getActiveOrdersByTable(tableId);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }

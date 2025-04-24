@@ -10,11 +10,11 @@ import lombok.experimental.UtilityClass;
 import java.util.List;
 
 @UtilityClass
-public class DomainOrderMapper {
+public class OrderMapper {
     public static DomainOrder toDomain(Order order) {
         Currency currency = order.getCurrency();
         List<OrderItem> items = order.getItems();
-        List<DomainOrder.DomainOrderItem> orderItems = items.stream().map(DomainOrderMapper::toDomainOrderItem)
+        List<DomainOrder.DomainOrderItem> orderItems = items.stream().map(OrderMapper::toDomainOrderItem)
                 .toList();
         return DomainOrder
                 .builder()
@@ -56,7 +56,7 @@ public class DomainOrderMapper {
     public static DomainOrder toLigthDomain(Order order) {
         Currency currency = order.getCurrency();
         List<OrderItem> items = order.getItems();
-        List<DomainOrder.DomainOrderItem> orderItems = items.stream().map(DomainOrderMapper::toLigthDomainOrderItem)
+        List<DomainOrder.DomainOrderItem> orderItems = items.stream().map(OrderMapper::toLigthDomainOrderItem)
                 .toList();
         return DomainOrder
                 .builder()

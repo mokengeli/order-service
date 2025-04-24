@@ -12,9 +12,11 @@ CREATE TABLE order_service_schema.tenant_context (
 CREATE TABLE order_service_schema.ref_tables (
                            id SERIAL PRIMARY KEY,
                            tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                           name VARCHAR(255) NOT NULL UNIQUE,
+                           name VARCHAR(255) NOT NULL,
                            created_at TIMESTAMP NOT NULL,
-                           updated_at TIMESTAMP
+                           updated_at TIMESTAMP,
+                           CONSTRAINT unique_name_per_tenant UNIQUE (name, tenant_context_id)
+
 );
 
 CREATE TABLE order_service_schema.currencies (

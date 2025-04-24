@@ -7,12 +7,16 @@ import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.OrderPort;
-import com.bacos.mokengeli.biloko.infrastructure.mapper.DomainOrderMapper;
+import com.bacos.mokengeli.biloko.infrastructure.mapper.OrderMapper;
+import com.bacos.mokengeli.biloko.infrastructure.mapper.RefTableMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.*;
 import com.bacos.mokengeli.biloko.infrastructure.model.Currency;
 import com.bacos.mokengeli.biloko.infrastructure.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -60,7 +64,7 @@ public class OrderAdapter implements OrderPort {
         createAndSetOrderItems(order, currency, createOrder.getOrderItems());
         order = this.orderRepository.save(order);
 
-        return Optional.of(DomainOrderMapper.toDomain(order));
+        return Optional.of(OrderMapper.toDomain(order));
     }
 
     @Override
@@ -86,10 +90,10 @@ public class OrderAdapter implements OrderPort {
         for (Map.Entry<Order, List<OrderItem>> entry : orderItemMap.entrySet()) {
             Order key = entry.getKey();
             List<OrderItem> value = entry.getValue();
-            DomainOrder domainOrderWithoutItem = DomainOrderMapper.toDomainOrderWithoutItem(key);
+            DomainOrder domainOrderWithoutItem = OrderMapper.toDomainOrderWithoutItem(key);
             List<DomainOrder.DomainOrderItem> orderItems = new ArrayList<>();
             for (OrderItem orderItem : value) {
-                DomainOrder.DomainOrderItem ligthDomainOrderItem = DomainOrderMapper.toLigthDomainOrderItem(orderItem);
+                DomainOrder.DomainOrderItem ligthDomainOrderItem = OrderMapper.toLigthDomainOrderItem(orderItem);
                 orderItems.add(ligthDomainOrderItem);
             }
             domainOrderWithoutItem.setItems(orderItems);
@@ -105,16 +109,21 @@ public class OrderAdapter implements OrderPort {
     }
 
     @Override
-    public Optional<List<DomainRefTable>> getRefTablesByTenantCode(String tenantCode) {
-        Optional<List<RefTable>> optRefTable = this.refTableRepository.findByTenantContextTenantCode(tenantCode);
-        if (optRefTable.isEmpty()) {
-            return Optional.empty();
-        }
-        List<RefTable> refTables = optRefTable.get();
-        List<DomainRefTable> list = refTables.stream()
-                .map(x -> DomainRefTable.builder().name(x.getName()).build())
-                .toList();
-        return Optional.of(list);
+    public Page<DomainRefTable> getRefTablesByTenantCode(String tenantCode, int page, int size) {
+        // 1) Construire le Pageable
+        Pageable pageable = PageRequest.of(page, size);
+
+        // 2) Appeler le repo paginé
+        Page<RefTable> refPage =
+                refTableRepository.findByTenantContextTenantCode(tenantCode, pageable);
+
+        // 3) Mapper chaque RefTable en DomainRefTable
+        return refPage.map(x ->
+                DomainRefTable.builder()
+                        .id(x.getId())
+                        .name(x.getName())
+                        .build()
+        );
     }
 
     @Override
@@ -161,6 +170,33 @@ public class OrderAdapter implements OrderPort {
         OrderItem orderItem = this.orderItemRepository.findById(id).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                 "No OrderItem found with id " + id));
         return orderItem.getState();
+    }
+
+    @Override
+    public DomainRefTable createRefTable(DomainRefTable refTable) throws ServiceException {
+        TenantContext tenantContext = this.tenantContextRepository.findByTenantCode(refTable.getTenantCode())
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                        "No tenant found with code " + refTable.getTenantCode()));
+        RefTable refT = RefTableMapper.toEntity(refTable);
+        refT.setCreatedAt(LocalDateTime.now());
+        refT.setTenantContext(tenantContext);
+        RefTable save = this.refTableRepository.save(refT);
+        return RefTableMapper.toDomain(save);
+    }
+
+    @Override
+    public List<DomainOrder> getActiveOrdersByTable(Long refTableId) {
+        List<Order> orders = this.orderRepository
+                .findActiveOrdersByRefTableId(refTableId);
+        return orders.stream()
+                .map(OrderMapper::toDomain)
+                .toList();
+    }
+
+    @Override
+    public boolean isRefTableBelongToTenant(Long refTableId, String tenantCode) {
+        return this.refTableRepository.existsByIdAndTenantContextTenantCode(refTableId, tenantCode);
+
     }
 
     private void createAndSetOrderItems(Order order, Currency currency, List<CreateOrderItem> orderItems) throws ServiceException {

@@ -1,8 +1,6 @@
 package com.bacos.mokengeli.biloko.infrastructure.mapper;
 
-import com.bacos.mokengeli.biloko.application.domain.DomainCategory;
 import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
-import com.bacos.mokengeli.biloko.infrastructure.model.Category;
 import com.bacos.mokengeli.biloko.infrastructure.model.Currency;
 import lombok.experimental.UtilityClass;
 
