@@ -6,6 +6,7 @@ import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
+import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
 import com.bacos.mokengeli.biloko.application.port.OrderPort;
@@ -158,5 +159,36 @@ public class OrderService {
         }
 
         return this.orderPort.getActiveOrdersByTable(tableId);
+    }
+
+    public DomainOrder addItems(UpdateOrder order) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        String tenantCode = connectedUser.getTenantCode();
+        List<Long> ids = order.getOrderItems()
+                .stream()
+                .map(CreateOrderItem::getDishId)
+                .toList();
+        if (!this.orderPort.isOrderBelongToTenant(order.getOrderId(), tenantCode)) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to update order with dish of other tenant code [{}]", errorId,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode());
+            throw new ServiceException(errorId, "You don't have the right to update dish of other tenant code. .");
+        }
+
+        if (!dishPort.isAllDishesOfTenant(tenantCode,
+                new ArrayList<>(ids))) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to update order with dish of other tenant code [{}]", errorId,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode());
+            throw new ServiceException(errorId, "You don't have the right to update dish of other tenant code. .");
+        }
+
+        try {
+            return this.orderPort.addItems(order);
+        } catch (ServiceException e) {
+            log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
+                    connectedUser.getEmployeeNumber(), e.getMessage());
+            throw new ServiceException(e.getTechnicalId(), "An internal error occurred while updating order");
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
+import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.OrderNotificationPort;
 import com.bacos.mokengeli.biloko.application.service.OrderNotificationService;
@@ -119,6 +120,15 @@ public class OrderController {
     public List<DomainOrder> getActiveOrdersByTable(@RequestParam("tableId") Long tableId) {
         try {
             return this.orderService.getActiveOrdersByTable(tableId);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    @PutMapping("/addItems")
+    public DomainOrder addItem(@RequestBody UpdateOrder order) {
+        try {
+            return this.orderService.addItems(order);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }

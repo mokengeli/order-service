@@ -20,4 +20,10 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
 
     @Query("SELECT d.price FROM Dish d WHERE d.id = :id")
     Double findPriceById(Long id);
+
+    /**
+     * Récupère tous les plats pour un tenant donné et une catégorie donnée.
+     */
+    List<Dish> findByTenantContextTenantCodeAndDishCategoriesCategoryId(
+            String tenantCode, Long categoryId);
 }

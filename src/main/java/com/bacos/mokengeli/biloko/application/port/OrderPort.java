@@ -4,6 +4,7 @@ import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
+import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import org.springframework.data.domain.Page;
 
@@ -32,4 +33,8 @@ public interface OrderPort {
     List<DomainOrder> getActiveOrdersByTable(Long refTableId);
 
     boolean isRefTableBelongToTenant(Long refTableId, String tenantCode);
+
+    DomainOrder addItems(UpdateOrder order) throws ServiceException;
+
+    boolean isOrderBelongToTenant(Long orderId, String tenantCode);
 }

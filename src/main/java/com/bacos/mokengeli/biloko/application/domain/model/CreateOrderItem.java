@@ -9,5 +9,5 @@ public class CreateOrderItem {
     private Long dishId;
     private String note;
     private int count;
-    private Long unitPrice;
+    private Double unitPrice;
 }

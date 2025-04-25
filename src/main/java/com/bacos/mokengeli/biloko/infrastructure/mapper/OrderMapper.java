@@ -84,6 +84,7 @@ public class OrderMapper {
                 .dishName(orderItem.getDish().getName())
                 .unitPrice(orderItem.getUnitPrice())
                 .orderItemDate(orderItem.getCreatedAt())
+                .count(1)
                 .build();
     }
 

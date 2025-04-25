@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class DishAdapter implements DishPort {
@@ -144,11 +145,13 @@ public class DishAdapter implements DishPort {
             domainDishProducts.add(DomainDishProduct.builder().productId(product.getId()).productName(product.getName())
                     .unitOfMeasure(product.getUnitOfMeasure())
                     .quantity(quantity)
+                    .removable(true)
                     .build());
         }));
         domainDish.setDishProducts(domainDishProducts);
         return Optional.of(domainDish);
     }
+
     @Override
     public Double getDishPrice(Long dishId) {
         return this.dishRepository.findPriceById(dishId);
@@ -156,6 +159,19 @@ public class DishAdapter implements DishPort {
 
     @Override
     public boolean checkIfProductIsOk(String tenantCode, List<Long> productIds) {
-       return  this.inventoryService.isProductExistAndOfTheSomeOrganisation(tenantCode, productIds);
+        return this.inventoryService.isProductExistAndOfTheSomeOrganisation(tenantCode, productIds);
+    }
+
+    @Override
+    public Optional<List<DomainDish>> getDishesByCategory(String tenantCode, Long categoryId) {
+        List<Dish> entities = dishRepository
+                .findByTenantContextTenantCodeAndDishCategoriesCategoryId(tenantCode, categoryId);
+        if (entities.isEmpty()) {
+            return Optional.empty();
+        }
+        List<DomainDish> domains = entities.stream()
+                .map(DishMapper::toDomain)
+                .collect(Collectors.toList());
+        return Optional.of(domains);
     }
 }

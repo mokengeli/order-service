@@ -15,4 +15,6 @@ public interface DishPort {
     Double getDishPrice(Long dishId);
 
     boolean checkIfProductIsOk(String tenantCode, List<Long> productIds);
+
+    Optional<List<DomainDish>> getDishesByCategory(String tenantCode, Long categroyId);
 }

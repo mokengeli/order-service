@@ -4,6 +4,7 @@ import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainDishProduct;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
+import com.bacos.mokengeli.biloko.application.port.CategoryPort;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +19,13 @@ public class DishService {
 
     private final DishPort dishPort;
     private final UserAppService userAppService;
+    private final CategoryPort categoryPort;
 
     @Autowired
-    public DishService(DishPort dishPort, UserAppService userAppService) {
+    public DishService(DishPort dishPort, UserAppService userAppService, CategoryPort categoryPort) {
         this.dishPort = dishPort;
         this.userAppService = userAppService;
+        this.categoryPort = categoryPort;
     }
 
     public DomainDish createDish(DomainDish dish) throws ServiceException {
@@ -55,7 +58,7 @@ public class DishService {
         }
 
         List<Long> productIds = dish.getDishProducts().stream().map(DomainDishProduct::getProductId).toList();
-        boolean isProductOk = this.dishPort.checkIfProductIsOk(dish.getTenantCode(),productIds);
+        boolean isProductOk = this.dishPort.checkIfProductIsOk(dish.getTenantCode(), productIds);
         if (!isProductOk) {
             String errorId = UUID.randomUUID().toString();
             throw new ServiceException(errorId, "Can not create dish because of issue with products.");
@@ -99,6 +102,7 @@ public class DishService {
             String errorId = UUID.randomUUID().toString();
             log.error("[{}]: User [{}] of tenant [{}] try to get a dish of different tenant. Here it's the dish ids [{}]", errorId, connectedUser.getEmployeeNumber(),
                     connectedUser.getTenantCode(), ids);
+            throw new ServiceException(errorId, "You don't have the right to get this dish");
         }
         try {
             Optional<DomainDish> optDish = this.dishPort.getDish(id);
@@ -112,5 +116,14 @@ public class DishService {
         }
 
         throw new ServiceException(UUID.randomUUID().toString(), "Dish not found");
+    }
+
+    public List<DomainDish> getDishesByCategory(Long categroyId)  {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        String tenantCode = connectedUser.getTenantCode();
+
+        Optional<List<DomainDish>> domainDishes = this.dishPort.getDishesByCategory(tenantCode,
+                categroyId);
+        return domainDishes.orElse(Collections.emptyList());
     }
 }

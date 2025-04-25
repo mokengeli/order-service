@@ -5,6 +5,7 @@ import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
+import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.OrderPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.OrderMapper;
@@ -56,7 +57,7 @@ public class OrderAdapter implements OrderPort {
 
         Order order = Order.builder()
                 .refTable(refTable)
-                .totalPrice(createOrder.getTotalPrice())
+                .totalPrice(0.0)
                 .currency(currency)
                 .tenantContext(tenantContext)
                 .createdAt(LocalDateTime.now())
@@ -199,7 +200,28 @@ public class OrderAdapter implements OrderPort {
 
     }
 
+    @Transactional
+    @Override
+    public DomainOrder addItems(UpdateOrder updateOrder) throws ServiceException {
+        Order order = this.orderRepository.findById(updateOrder.getOrderId())
+                .orElseThrow(() ->
+                        new ServiceException(UUID.randomUUID().toString(),
+                                "No Order found with id = " + updateOrder.getOrderId())
+                );
+        Currency currency = order.getCurrency();
+        createAndSetOrderItems(order, currency, updateOrder.getOrderItems());
+
+        order = this.orderRepository.save(order);
+        return OrderMapper.toDomain(order);
+    }
+
+    @Override
+    public boolean isOrderBelongToTenant(Long orderId, String tenantCode) {
+        return this.orderRepository.existsByIdAndTenantCode(orderId, tenantCode);
+    }
+
     private void createAndSetOrderItems(Order order, Currency currency, List<CreateOrderItem> orderItems) throws ServiceException {
+        Double totalPrice = order.getTotalPrice();
         for (CreateOrderItem orderItem : orderItems) {
             Optional<Dish> optionalDish = this.dishRepository.findById(orderItem.getDishId());
             if (optionalDish.isEmpty()) {
@@ -207,6 +229,7 @@ public class OrderAdapter implements OrderPort {
             }
             Dish dish = optionalDish.get();
             for (int i = 0; i < orderItem.getCount(); i++) {
+                totalPrice += dish.getPrice();
                 OrderItem build = OrderItem.builder()
                         .state(OrderItemState.PENDING)
                         .note(orderItem.getNote() == null ? "" : orderItem.getNote())
@@ -219,6 +242,7 @@ public class OrderAdapter implements OrderPort {
                 order.addItem(build);
             }
         }
+        order.setTotalPrice(totalPrice);
 
     }
 

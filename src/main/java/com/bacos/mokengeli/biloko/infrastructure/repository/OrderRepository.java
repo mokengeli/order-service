@@ -30,4 +30,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         );
     }
 
+    @Query("SELECT COUNT(o) > 0 FROM Order o WHERE o.id = :orderId AND o.tenantContext.tenantCode = :tenantCode")
+    boolean existsByIdAndTenantCode(@Param("orderId") Long orderId, @Param("tenantCode") String tenantCode);
+
+
 }
