@@ -7,6 +7,7 @@ import com.bacos.mokengeli.biloko.infrastructure.model.Order;
 import com.bacos.mokengeli.biloko.infrastructure.model.OrderItem;
 import lombok.experimental.UtilityClass;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @UtilityClass
@@ -76,12 +77,18 @@ public class OrderMapper {
     }
 
     public static DomainOrder.DomainOrderItem toDomainOrderItem(OrderItem orderItem) {
+        List<String> categories = new ArrayList<>();
+        if (orderItem.getDish().getDishCategories() != null) {
+            List<String> list = orderItem.getDish().getDishCategories().stream().map(x -> x.getCategory().getName()).toList();
+            categories.addAll(list);
+        }
         return DomainOrder.DomainOrderItem.builder()
                 .id(orderItem.getId())
                 .state(orderItem.getState())
                 .note(orderItem.getNote())
                 .dishId(orderItem.getDish().getId())
                 .dishName(orderItem.getDish().getName())
+                .categories(categories)
                 .unitPrice(orderItem.getUnitPrice())
                 .orderItemDate(orderItem.getCreatedAt())
                 .count(1)

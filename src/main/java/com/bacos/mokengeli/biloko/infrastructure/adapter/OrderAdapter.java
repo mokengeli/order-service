@@ -94,10 +94,11 @@ public class OrderAdapter implements OrderPort {
             DomainOrder domainOrderWithoutItem = OrderMapper.toDomainOrderWithoutItem(key);
             List<DomainOrder.DomainOrderItem> orderItems = new ArrayList<>();
             for (OrderItem orderItem : value) {
-                DomainOrder.DomainOrderItem ligthDomainOrderItem = OrderMapper.toLigthDomainOrderItem(orderItem);
+                DomainOrder.DomainOrderItem ligthDomainOrderItem = OrderMapper.toDomainOrderItem(orderItem);
                 orderItems.add(ligthDomainOrderItem);
             }
             domainOrderWithoutItem.setItems(orderItems);
+            domainOrderWithoutItem.sortItemsByCategoryPriority();
             list.add(domainOrderWithoutItem);
         }
 

@@ -75,10 +75,11 @@ public class OrderController {
     }
 
     /**
+     * to mark item ready means has been cooked
      * @param id: id of orderItem to cook
      */
     @PreAuthorize("hasAuthority('COOK_DISH')")
-    @PutMapping("/dish/cook")
+    @PutMapping("/dish/ready")
     public void prepareOrderItem(@RequestParam("id") Long id) {
         try {
             orderService.changeOrderItemState(id, OrderItemState.READY);
@@ -89,6 +90,7 @@ public class OrderController {
     }
 
     /**
+     * the dish has been served to the client
      * @param id: orderItem to reject
      */
     @PreAuthorize("hasAuthority('SERVE_DISH')")
