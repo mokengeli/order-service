@@ -37,4 +37,6 @@ public interface OrderPort {
     DomainOrder addItems(UpdateOrder order) throws ServiceException;
 
     boolean isOrderBelongToTenant(Long orderId, String tenantCode);
+
+    Optional<DomainOrder> getOrder(Long id);
 }

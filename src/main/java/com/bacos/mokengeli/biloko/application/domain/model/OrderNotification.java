@@ -12,6 +12,4 @@ public class OrderNotification {
     private Long orderId;
     private String newState;
     private String previousState;
-
-
 }

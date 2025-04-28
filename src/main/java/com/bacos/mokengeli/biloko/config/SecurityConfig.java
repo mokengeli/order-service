@@ -23,16 +23,17 @@ import java.util.Collections;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
-    private String allowedOrigins;
     @Autowired
-    public SecurityConfig(@Value("${security.cors.allowed-origins}") String allowedOrigins, JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
-        this.allowedOrigins = allowedOrigins;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf(csrf -> csrf.disable())  // Désactivation de la protection CSRF, car on utilise JWT
+        return http.csrf(
+                csrf -> csrf.disable()
+                )  // Désactivation de la protection CSRF, car on utilise JWT
+                //.cors(cors -> cors.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers( "/public/**").permitAll()  // Routes publiques
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -44,13 +45,5 @@ public class SecurityConfig {
                 .build();
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        config.setAllowedMethods(Collections.singletonList("*"));
-        config.setAllowCredentials(true);
-        config.setAllowedHeaders(Collections.singletonList("*"));
-        return request -> config;
-    }
+
 }

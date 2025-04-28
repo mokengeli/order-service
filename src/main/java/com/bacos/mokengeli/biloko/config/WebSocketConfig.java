@@ -22,8 +22,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Endpoint that clients will connect to.
-        registry.addEndpoint("/api/order/ws-orders")
-                .setAllowedOriginPatterns("*") // Adjust origins as needed.
+        registry.addEndpoint("/api/order/ws")
+                .setAllowedOrigins("*") // Adjust origins as needed.
                 .withSockJS();
     }
 
@@ -32,6 +32,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // Enable a simple in-memory message broker for destinations starting with /topic.
         registry.enableSimpleBroker("/topic");
         // Prefix for messages that are bound for methods annotated with @MessageMapping.
-        registry.setApplicationDestinationPrefixes("/app");
+        registry.setApplicationDestinationPrefixes("/ws");
     }
 }

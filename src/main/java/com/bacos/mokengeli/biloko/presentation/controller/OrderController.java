@@ -2,13 +2,10 @@ package com.bacos.mokengeli.biloko.presentation.controller;
 
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
-import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
 import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
-import com.bacos.mokengeli.biloko.application.port.OrderNotificationPort;
-import com.bacos.mokengeli.biloko.application.service.OrderNotificationService;
 import com.bacos.mokengeli.biloko.application.service.OrderService;
 import com.bacos.mokengeli.biloko.presentation.CreateOrderRequest;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
@@ -45,6 +42,21 @@ public class OrderController {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
     }
+
+    /**
+     * @param id
+     * @return
+     */
+    @GetMapping("/{id}")
+    public DomainOrder getOrderById(@PathVariable Long id) {
+        try {
+            return orderService.getOrderById(id);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+
+    }
+
 
     /**
      * @param state state of orderItems to retrieve

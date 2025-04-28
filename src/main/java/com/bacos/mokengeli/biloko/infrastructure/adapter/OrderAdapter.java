@@ -221,6 +221,16 @@ public class OrderAdapter implements OrderPort {
         return this.orderRepository.existsByIdAndTenantCode(orderId, tenantCode);
     }
 
+    @Override
+    public Optional<DomainOrder> getOrder(Long id) {
+        Optional<Order> optionalOrder = this.orderRepository.findById(id);
+        if (optionalOrder.isEmpty()) {
+            return Optional.empty();
+        }
+        Order order = optionalOrder.get();
+        return Optional.of(OrderMapper.toDomain(order));
+    }
+
     private void createAndSetOrderItems(Order order, Currency currency, List<CreateOrderItem> orderItems) throws ServiceException {
         Double totalPrice = order.getTotalPrice();
         for (CreateOrderItem orderItem : orderItems) {

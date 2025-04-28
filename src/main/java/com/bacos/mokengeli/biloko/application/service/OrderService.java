@@ -184,11 +184,34 @@ public class OrderService {
         }
 
         try {
-            return this.orderPort.addItems(order);
+            DomainOrder domainOrder = this.orderPort.addItems(order);
+            this.orderNotificationService.notifyStateChange(domainOrder.getId(), OrderItemState.PENDING.name(),
+                    OrderItemState.PENDING.name());
+            return domainOrder;
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
                     connectedUser.getEmployeeNumber(), e.getMessage());
             throw new ServiceException(e.getTechnicalId(), "An internal error occurred while updating order");
         }
+    }
+
+    public DomainOrder getOrderById(Long id) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        boolean orderBelongToTenant = this.orderPort.isOrderBelongToTenant(id, connectedUser.getTenantCode());
+        if (!orderBelongToTenant) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to get order of another tenant code order Id = [{}]", errorId,
+                    connectedUser.getEmployeeNumber(), id);
+            throw new ServiceException(errorId, "You don't have the right to get this order.");
+        }
+        Optional<DomainOrder> order = this.orderPort.getOrder(id);
+        if (order.isEmpty()) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] no order found for this id = {}", errorId,
+                    connectedUser.getEmployeeNumber(), id);
+            throw new ServiceException(errorId, "No order found for this order.");
+
+        }
+        return order.get();
     }
 }
