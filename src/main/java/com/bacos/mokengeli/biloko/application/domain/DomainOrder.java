@@ -19,6 +19,10 @@ public class DomainOrder {
     private double totalPrice;
     private DomainCurrency currency;
     private LocalDateTime orderDate;
+    private OrderPaymentStatus paymentStatus;
+    private double paidAmount;
+    private double remainingAmount;
+    private List<DomainPaymentTransaction> payments;
 
     @Builder
     @Data
@@ -32,6 +36,19 @@ public class DomainOrder {
         private Double unitPrice;
         private LocalDateTime orderItemDate;
         private List<String> categories;
+
+    }
+    @Builder
+    @Data
+    public static class DomainPaymentTransaction {
+        private Long id;
+        private double amount;
+        private String paymentMethod;
+        private LocalDateTime createdAt;
+        private String employeeNumber;
+        private String notes;
+        private boolean isRefund;
+        private double discountAmount;
     }
     public void sortItemsByCategoryPriority() {
         if (items == null || items.isEmpty()) {

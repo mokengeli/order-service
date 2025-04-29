@@ -133,9 +133,10 @@ CREATE TABLE order_service_schema.orders (
                                              tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
                                              currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
                                              created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             updated_at TIMESTAMP
+                                             updated_at TIMESTAMP,
+                                             payment_status VARCHAR(50) NOT NULL DEFAULT 'UNPAID',
+                                             paid_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.0
 );
-
 CREATE TABLE order_service_schema.order_items (
                                                   id SERIAL PRIMARY KEY,
                                                   state VARCHAR(50) NOT NULL,
@@ -145,6 +146,18 @@ CREATE TABLE order_service_schema.order_items (
                                                   dish_id INT REFERENCES order_service_schema.dishes(id),
                                                   currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
                                                   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE order_service_schema.payment_transactions (
+                                                           id SERIAL PRIMARY KEY,
+                                                           order_id INT NOT NULL REFERENCES order_service_schema.orders(id),
+                                                           amount DECIMAL(12, 2) NOT NULL,
+                                                           payment_method VARCHAR(50) NOT NULL,
+                                                           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                                           employee_number VARCHAR(50) NOT NULL,
+                                                           notes TEXT,
+                                                           is_refund BOOLEAN NOT NULL DEFAULT false,
+                                                           discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.0
 );
 
 CREATE TABLE order_service_schema.orders_audit (
@@ -158,6 +171,10 @@ CREATE TABLE order_service_schema.orders_audit (
                                                    changed_by VARCHAR(255) NOT NULL  -- Employee number or any identifier for the user who made the change
 );
 
+CREATE INDEX idx_orders_tenant_id ON order_service_schema.orders(tenant_context_id);
+CREATE INDEX idx_orders_ref_table_id ON order_service_schema.orders(ref_table_id);
+CREATE INDEX idx_payment_transactions_order_id ON order_service_schema.payment_transactions(order_id);
+CREATE INDEX idx_orders_payment_status ON order_service_schema.orders(payment_status);
 
 
 

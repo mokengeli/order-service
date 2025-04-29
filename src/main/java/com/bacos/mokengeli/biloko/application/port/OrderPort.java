@@ -3,6 +3,7 @@ package com.bacos.mokengeli.biloko.application.port;
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
+import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -39,4 +40,31 @@ public interface OrderPort {
     boolean isOrderBelongToTenant(Long orderId, String tenantCode);
 
     Optional<DomainOrder> getOrder(Long id);
+
+    /**
+     * Enregistre un paiement pour une commande
+     */
+    DomainOrder recordPayment(Long orderId, Double amount, String paymentMethod,
+                              String employeeNumber, String notes, Double discountAmount) throws ServiceException;
+
+    /**
+     * Récupère l'historique des paiements pour une commande
+     */
+    List<DomainOrder.DomainPaymentTransaction> getPaymentHistory(Long orderId);
+
+    /**
+     * Annule un paiement (remboursement)
+     */
+    DomainOrder refundPayment(Long paymentId, String employeeNumber, String reason) throws ServiceException;
+
+    /**
+     * Récupère les commandes par statut de paiement
+     */
+    List<DomainOrder> getOrdersByPaymentStatus(OrderPaymentStatus status, String tenantCode);
+
+    /**
+     * Récupère les commandes qui nécessitent un paiement (partiellement ou non payées)
+     */
+    List<DomainOrder> getOrdersRequiringPayment(String tenantCode);
+
 }

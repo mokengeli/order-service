@@ -3,6 +3,7 @@ package com.bacos.mokengeli.biloko.infrastructure.adapter;
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
+import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
 import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class OrderAdapter implements OrderPort {
@@ -32,10 +34,12 @@ public class OrderAdapter implements OrderPort {
     private final RefTableRepository refTableRepository;
     private final OrderItemRepository orderItemRepository;
     private final InventoryService inventoryService;
+    private final PaymentTransactionRepository paymentTransactionRepository;
+
 
     @Autowired
     public OrderAdapter(OrderRepository orderRepository, CurrencyRepository currencyRepository,
-                        TenantContextRepository tenantContextRepository, DishRepository dishRepository, RefTableRepository refTableRepository, OrderItemRepository orderItemRepository, InventoryService inventoryService) {
+                        TenantContextRepository tenantContextRepository, DishRepository dishRepository, RefTableRepository refTableRepository, OrderItemRepository orderItemRepository, InventoryService inventoryService, PaymentTransactionRepository paymentTransactionRepository) {
         this.orderRepository = orderRepository;
         this.currencyRepository = currencyRepository;
         this.tenantContextRepository = tenantContextRepository;
@@ -43,6 +47,7 @@ public class OrderAdapter implements OrderPort {
         this.refTableRepository = refTableRepository;
         this.orderItemRepository = orderItemRepository;
         this.inventoryService = inventoryService;
+        this.paymentTransactionRepository = paymentTransactionRepository;
     }
 
     @Transactional
@@ -255,6 +260,130 @@ public class OrderAdapter implements OrderPort {
         }
         order.setTotalPrice(totalPrice);
 
+    }
+
+    @Transactional
+    @Override
+    public DomainOrder recordPayment(Long orderId, Double amount, String paymentMethod,
+                                     String employeeNumber, String notes, Double discountAmount) throws ServiceException {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                        "No Order found with id = " + orderId));
+
+        // Créer la transaction de paiement
+        PaymentTransaction payment = PaymentTransaction.builder()
+                .order(order)
+                .amount(amount)
+                .paymentMethod(paymentMethod)
+                .employeeNumber(employeeNumber)
+                .notes(notes)
+                .createdAt(LocalDateTime.now())
+                .isRefund(false)
+                .discountAmount(discountAmount != null ? discountAmount : 0.0)
+                .build();
+
+        // Ajouter le paiement à la commande
+        order.addPayment(payment);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        // Sauvegarder la commande mise à jour
+        Order savedOrder = orderRepository.save(order);
+
+        // Mapper et retourner le domaine
+        return orderToDomainWithPayments(savedOrder);
+    }
+
+    @Override
+    public List<DomainOrder.DomainPaymentTransaction> getPaymentHistory(Long orderId) {
+        List<PaymentTransaction> payments = paymentTransactionRepository.findByOrderIdOrderByCreatedAtDesc(orderId);
+        return payments.stream()
+                .map(this::paymentToDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    @Override
+    public DomainOrder refundPayment(Long paymentId, String employeeNumber, String reason) throws ServiceException {
+        PaymentTransaction payment = paymentTransactionRepository.findById(paymentId)
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                        "No Payment found with id = " + paymentId));
+
+        Order order = payment.getOrder();
+
+        // Créer une transaction de remboursement
+        PaymentTransaction refund = PaymentTransaction.builder()
+                .order(order)
+                .amount(-payment.getAmount()) // Montant négatif pour un remboursement
+                .paymentMethod(payment.getPaymentMethod())
+                .employeeNumber(employeeNumber)
+                .notes("Refund for payment #" + paymentId + ": " + reason)
+                .createdAt(LocalDateTime.now())
+                .isRefund(true)
+                .discountAmount(0.0)
+                .build();
+
+        // Ajouter le remboursement à la commande
+        order.addPayment(refund);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        // Sauvegarder la commande mise à jour
+        Order savedOrder = orderRepository.save(order);
+
+        // Mapper et retourner le domaine
+        return orderToDomainWithPayments(savedOrder);
+    }
+
+    @Override
+    public List<DomainOrder> getOrdersByPaymentStatus(OrderPaymentStatus status, String tenantCode) {
+        List<Order> orders = orderRepository.findByPaymentStatusAndTenantCode(status, tenantCode);
+        return orders.stream()
+                .map(this::orderToDomainWithPayments)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<DomainOrder> getOrdersRequiringPayment(String tenantCode) {
+        List<Order> orders = orderRepository.findByPaymentStatusInAndTenantCode(
+                List.of(OrderPaymentStatus.UNPAID, OrderPaymentStatus.PARTIALLY_PAID),
+                tenantCode
+        );
+        return orders.stream()
+                .map(this::orderToDomainWithPayments)
+                .collect(Collectors.toList());
+    }
+
+    // Méthode helper pour mapper une Order en DomainOrder avec paiements
+    private DomainOrder orderToDomainWithPayments(Order order) {
+        DomainOrder domainOrder = OrderMapper.toDomain(order);
+
+        // Ajouter les informations de paiement
+        domainOrder.setPaymentStatus(order.getPaymentStatus());
+        domainOrder.setPaidAmount(order.getPaidAmount());
+        domainOrder.setRemainingAmount(order.getRemainingAmount());
+
+        // Mapper les transactions de paiement
+        if (order.getPayments() != null) {
+            List<DomainOrder.DomainPaymentTransaction> domainPayments = order.getPayments().stream()
+                    .map(this::paymentToDomain)
+                    .collect(Collectors.toList());
+            domainOrder.setPayments(domainPayments);
+        }
+
+        return domainOrder;
+    }
+
+    // Méthode helper pour mapper une PaymentTransaction en DomainPaymentTransaction
+    private DomainOrder.DomainPaymentTransaction paymentToDomain(PaymentTransaction payment) {
+        return DomainOrder.DomainPaymentTransaction.builder()
+                .id(payment.getId())
+                .amount(payment.getAmount())
+                .paymentMethod(payment.getPaymentMethod())
+                .createdAt(payment.getCreatedAt())
+                .employeeNumber(payment.getEmployeeNumber())
+                .notes(payment.getNotes())
+                .isRefund(payment.getIsRefund())
+                .discountAmount(payment.getDiscountAmount())
+                .build();
     }
 
 }

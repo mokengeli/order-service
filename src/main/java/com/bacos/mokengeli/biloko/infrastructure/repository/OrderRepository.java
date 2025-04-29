@@ -1,6 +1,7 @@
 package com.bacos.mokengeli.biloko.infrastructure.repository;
 
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
+import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
 import com.bacos.mokengeli.biloko.infrastructure.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,5 +34,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT COUNT(o) > 0 FROM Order o WHERE o.id = :orderId AND o.tenantContext.tenantCode = :tenantCode")
     boolean existsByIdAndTenantCode(@Param("orderId") Long orderId, @Param("tenantCode") String tenantCode);
 
+    @Query("SELECT o FROM Order o WHERE o.paymentStatus = :status AND o.tenantContext.tenantCode = :tenantCode")
+    List<Order> findByPaymentStatusAndTenantCode(
+            @Param("status") OrderPaymentStatus status,
+            @Param("tenantCode") String tenantCode
+    );
+
+    @Query("SELECT o FROM Order o WHERE o.paymentStatus IN :statuses AND o.tenantContext.tenantCode = :tenantCode")
+    List<Order> findByPaymentStatusInAndTenantCode(
+            @Param("statuses") Collection<OrderPaymentStatus> statuses,
+            @Param("tenantCode") String tenantCode
+    );
 
 }
