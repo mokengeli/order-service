@@ -33,10 +33,13 @@ eureka:
     prefer-ip-address: true  # Utilise l'adresse IP pour l'enregistrement (utile pour les environnements containerisés)
 
 management:
+  endpoint:
+    websocket:
+      enabled: true
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,loggers
+        include: health,info,metrics, websocket,loggers
 
 springdoc:
   api-docs:
