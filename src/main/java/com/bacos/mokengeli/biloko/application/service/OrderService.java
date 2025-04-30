@@ -1,12 +1,8 @@
 package com.bacos.mokengeli.biloko.application.service;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
-import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
-import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
-import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
-import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
-import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
+import com.bacos.mokengeli.biloko.application.domain.model.*;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
 import com.bacos.mokengeli.biloko.application.port.OrderPort;
@@ -74,8 +70,8 @@ public class OrderService {
                     connectedUser.getEmployeeNumber());
             throw new ServiceException(errorId, "An internal error occurred");
         }
-        this.orderNotificationService.notifyStateChange(order.get().getId(), OrderItemState.PENDING.name(),
-                OrderItemState.PENDING.name());
+        this.orderNotificationService.notifyStateChange(order.get().getId(), OrderNotification.OrderNotificationStatus.NEW_ORDER,
+                "", OrderItemState.PENDING.name());
 
         return order.get();
     }
@@ -122,24 +118,24 @@ public class OrderService {
         return totalPrice;
     }
 
-    public void changeOrderItemState(Long id, OrderItemState orderItemState) throws ServiceException {
+    public void changeOrderItemState(Long orderDishId, OrderItemState orderItemState) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
-        boolean isOrderItemOfTenant = this.orderPort.isOrderItemOfTenant(id, connectedUser.getTenantCode());
+        boolean isOrderItemOfTenant = this.orderPort.isOrderItemOfTenant(orderDishId, connectedUser.getTenantCode());
         if (!isOrderItemOfTenant) {
             String errorId = UUID.randomUUID().toString();
             log.error("[{}]: User [{}] try to [{}] orderItem [{}] of other tenant code [{}]", errorId,
-                    connectedUser.getEmployeeNumber(), orderItemState, id, connectedUser.getTenantCode());
+                    connectedUser.getEmployeeNumber(), orderItemState, orderDishId, connectedUser.getTenantCode());
             throw new ServiceException(errorId, "A problem occured with the dish.");
         }
         try {
-            OrderItemState currentState = this.orderPort.getOrderItemState(id);
+            OrderItemState currentState = this.orderPort.getOrderItemState(orderDishId);
 
             if (OrderItemState.READY.equals(orderItemState)) {
-                this.orderPort.prepareOrderItem(id);
+                this.orderPort.prepareOrderItem(orderDishId);
             } else {
-                this.orderPort.changeOrderItemState(id, orderItemState);
+                this.orderPort.changeOrderItemState(orderDishId, orderItemState);
             }
-            this.orderNotificationService.notifyStateChange(id, currentState.name(), orderItemState.name());
+            this.orderNotificationService.notifyStateChange(orderDishId, OrderNotification.OrderNotificationStatus.DISH_UPDATE, currentState.name(), orderItemState.name());
 
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
@@ -185,7 +181,8 @@ public class OrderService {
 
         try {
             DomainOrder domainOrder = this.orderPort.addItems(order);
-            this.orderNotificationService.notifyStateChange(domainOrder.getId(), OrderItemState.PENDING.name(),
+            this.orderNotificationService.notifyStateChange(domainOrder.getId(),
+                    OrderNotification.OrderNotificationStatus.DISH_UPDATE, OrderItemState.PENDING.name(),
                     OrderItemState.PENDING.name());
             return domainOrder;
         } catch (ServiceException e) {

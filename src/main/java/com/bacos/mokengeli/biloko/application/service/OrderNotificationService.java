@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @Service
 public class OrderNotificationService {
@@ -20,7 +22,8 @@ public class OrderNotificationService {
         this.orderNotification = orderNotification;
     }
 
-    public void notifyStateChange(Long orderId, String previousState, String newState) {
+    public void notifyStateChange(Long orderId, OrderNotification.OrderNotificationStatus orderNotificationStatus,
+                                  String previousState, String newState, String additionnalInfo) {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
 
         String tenantCode = connectedUser.getTenantCode();
@@ -29,7 +32,14 @@ public class OrderNotificationService {
                 .previousState(previousState)
                 .newState(newState)
                 .tenantCode(tenantCode)
+                .orderStatus(orderNotificationStatus)
+                .timestamp(LocalDateTime.now())
                 .build();
         this.orderNotification.notifyWebSocketUser(notification);
+    }
+
+    public void notifyStateChange(Long orderId, OrderNotification.OrderNotificationStatus orderNotificationStatus,
+                                  String previousState, String newState) {
+        notifyStateChange(orderId, orderNotificationStatus, previousState, newState, null);
     }
 }

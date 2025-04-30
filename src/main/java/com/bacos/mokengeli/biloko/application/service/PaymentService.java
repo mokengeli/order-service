@@ -3,6 +3,7 @@ package com.bacos.mokengeli.biloko.application.service;
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
+import com.bacos.mokengeli.biloko.application.domain.model.OrderNotification;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.OrderPort;
 import lombok.extern.slf4j.Slf4j;
@@ -56,8 +57,10 @@ public class PaymentService {
                     && !OrderPaymentStatus.UNPAID.equals(paymentStatus)) {
                 this.orderNotificationService.notifyStateChange(
                         orderId,
+                        OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE,
                         paymentStatus.name(),
-                        paymentStatus.name()
+                        paymentStatus.name(),
+                        "No Paiement register because already fully paid."
                 );
                 return domainOrder;
             }
@@ -74,6 +77,7 @@ public class PaymentService {
             // Notifier du changement de statut de paiement
             this.orderNotificationService.notifyStateChange(
                     orderId,
+                    OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE,
                     paymentStatus.name(),
                     updatedOrder.getPaymentStatus().name()
             );
