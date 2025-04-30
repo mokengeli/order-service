@@ -64,6 +64,8 @@ public class OrderAdapter implements OrderPort {
                 .refTable(refTable)
                 .totalPrice(0.0)
                 .currency(currency)
+                .paidAmount(0.0)
+                .paymentStatus(OrderPaymentStatus.UNPAID)
                 .tenantContext(tenantContext)
                 .createdAt(LocalDateTime.now())
                 .build();

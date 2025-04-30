@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -44,6 +45,22 @@ public class PaymentService {
         }
 
         try {
+            Optional<DomainOrder> order = this.orderPort.getOrder(orderId);
+
+            DomainOrder domainOrder = order.get();
+            OrderPaymentStatus paymentStatus = domainOrder.getPaymentStatus();
+            // si on est pas dans un etat necessitant un paiement cela signifie que la commande
+            // a deja été réglé
+            // on notifie quand meme
+            if (!OrderPaymentStatus.PARTIALLY_PAID.equals(paymentStatus)
+                    && !OrderPaymentStatus.UNPAID.equals(paymentStatus)) {
+                this.orderNotificationService.notifyStateChange(
+                        orderId,
+                        paymentStatus.name(),
+                        paymentStatus.name()
+                );
+                return domainOrder;
+            }
             // Enregistrer le paiement
             DomainOrder updatedOrder = this.orderPort.recordPayment(
                     orderId,
@@ -57,7 +74,7 @@ public class PaymentService {
             // Notifier du changement de statut de paiement
             this.orderNotificationService.notifyStateChange(
                     orderId,
-                    "PAYMENT_STATUS",
+                    paymentStatus.name(),
                     updatedOrder.getPaymentStatus().name()
             );
 

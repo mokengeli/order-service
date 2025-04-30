@@ -23,12 +23,14 @@ public class OrderMapper {
                 .tenantCode(order.getTenantContext().getTenantCode())
                 .refTable(order.getRefTable().getName())
                 .items(orderItems)
+                .paymentStatus(order.getPaymentStatus())
                 .currency(DomainCurrency.builder()
                         .code(currency.getCode())
                         .label(currency.getLabel())
                         .id(currency.getId())
                         .build())
                 .orderDate(order.getCreatedAt())
+                .paidAmount(order.getPaidAmount())
                 .totalPrice(order.getTotalPrice())
                 .build();
 

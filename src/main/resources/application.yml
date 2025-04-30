@@ -32,6 +32,11 @@ eureka:
   instance:
     prefer-ip-address: true  # Utilise l'adresse IP pour l'enregistrement (utile pour les environnements containerisés)
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers
 
 springdoc:
   api-docs:
