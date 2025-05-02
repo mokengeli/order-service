@@ -21,7 +21,8 @@ public class OrderMapper {
                 .builder()
                 .id(order.getId())
                 .tenantCode(order.getTenantContext().getTenantCode())
-                .refTable(order.getRefTable().getName())
+                .tableName(order.getRefTable().getName())
+                .tableId(order.getRefTable().getId())
                 .items(orderItems)
                 .paymentStatus(order.getPaymentStatus())
                 .currency(DomainCurrency.builder()
@@ -38,13 +39,13 @@ public class OrderMapper {
 
     public static DomainOrder toDomainOrderWithoutItem(Order order) {
         Currency currency = order.getCurrency();
-        List<OrderItem> items = order.getItems();
 
         return DomainOrder
                 .builder()
                 .id(order.getId())
                 .tenantCode(order.getTenantContext().getTenantCode())
-                .refTable(order.getRefTable().getName())
+                .tableName(order.getRefTable().getName())
+                .tableId(order.getRefTable().getId())
                 .orderDate(order.getCreatedAt())
                 .currency(DomainCurrency.builder()
                         .code(currency.getCode())
@@ -65,7 +66,8 @@ public class OrderMapper {
                 .builder()
                 .id(order.getId())
                 .tenantCode(order.getTenantContext().getTenantCode())
-                .refTable(order.getRefTable().getName())
+                .tableName(order.getRefTable().getName())
+                .tableId(order.getRefTable().getId())
                 .items(orderItems)
                 .currency(DomainCurrency.builder()
                         .code(currency.getCode())

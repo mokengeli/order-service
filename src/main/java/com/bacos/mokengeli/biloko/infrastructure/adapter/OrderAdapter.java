@@ -57,8 +57,8 @@ public class OrderAdapter implements OrderPort {
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + createOrder.getTenantCode()));
         Currency currency = this.currencyRepository.findById(createOrder.getCurrencyId())
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No currency found with id " + createOrder.getCurrencyId()));
-        RefTable refTable = this.refTableRepository.findByName(createOrder.getRefTable())
-                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No Ref table found with the name " + createOrder.getRefTable()));
+        RefTable refTable = this.refTableRepository.findById(createOrder.getTableId())
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No Ref table found with the id " + createOrder.getTableId()));
 
         Order order = Order.builder()
                 .refTable(refTable)

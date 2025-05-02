@@ -11,7 +11,8 @@ import java.util.List;
 public class CreateOrder {
 
     private String tenantCode;
-    private String refTable;
+    private String tableName;
+    private Long tableId;
     private String employeeNumber;
     private Long currencyId;
     private List<CreateOrderItem> orderItems;

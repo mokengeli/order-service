@@ -6,7 +6,8 @@ import java.util.List;
 
 @Data
 public class CreateOrderRequest {
-    private String refTable;
+    private Long tableId;
+    private String tableName;
     private Long currencyId;
     private List<CreateOrderItemRequest> orderItems;
 

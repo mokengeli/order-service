@@ -7,7 +7,6 @@ import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
 import com.bacos.mokengeli.biloko.application.port.OrderPort;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,18 +30,18 @@ public class OrderService {
         this.orderNotificationService = orderNotificationService;
     }
 
-    public DomainOrder createOrder(Long currencyId, String refTable, List<CreateOrderItem> createOrderItems) throws ServiceException {
+    public DomainOrder createOrder(Long currencyId, Long refTableId, List<CreateOrderItem> createOrderItems) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
 
-        if (StringUtils.isEmpty(refTable)) {
+        if (refTableId == null) {
             String errorId = UUID.randomUUID().toString();
-            log.error("[{}]: User [{}]. RefTable is mandatory", errorId, connectedUser.getEmployeeNumber());
+            log.error("[{}]: User [{}]. RefTableId is mandatory", errorId, connectedUser.getEmployeeNumber());
             throw new ServiceException(errorId, "RefTable cannot be empty");
         }
         String tenantCode = connectedUser.getTenantCode();
-        if (!this.orderPort.isRefTableBelongToTenant(refTable, tenantCode)) {
+        if (!this.orderPort.isRefTableBelongToTenant(refTableId, tenantCode)) {
             String errorId = UUID.randomUUID().toString();
-            log.error("[{}]: User [{}]. RefTable [{}] provided neither not exist or not belong to the tenant of user", errorId, connectedUser.getEmployeeNumber(), refTable);
+            log.error("[{}]: User [{}]. RefTable [{}] provided neither not exist or not belong to the tenant of user", errorId, connectedUser.getEmployeeNumber(), refTableId);
             throw new ServiceException(errorId, "Table must belong to your company");
         }
 
@@ -51,7 +50,7 @@ public class OrderService {
                 .tenantCode(tenantCode)
                 .currencyId(currencyId)
                 .employeeNumber(connectedUser.getEmployeeNumber())
-                .refTable(refTable)
+                .tableId(refTableId)
                 .totalPrice(totalPrice)
                 .state(OrderItemState.PENDING)
                 .orderItems(createOrderItems)

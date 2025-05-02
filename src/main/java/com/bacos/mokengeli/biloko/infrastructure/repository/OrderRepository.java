@@ -24,10 +24,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("excludedStates") Collection<OrderItemState> excludedStates
     );
 
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "WHERE o.refTable.id = :refTableId " +
+            "  AND o.paymentStatus NOT IN :paymentStatuses")
+    List<Order> findOrdersByRefTableAndPaymentStatus(
+            @Param("refTableId") Long refTableId,
+            @Param("paymentStatuses") Collection<OrderPaymentStatus> paymentStatuses
+    );
+
     default List<Order> findActiveOrdersByRefTableId(Long refTableId) {
-        return findOrdersByRefTableIdAndExcludedStates(
+        return findOrdersByRefTableAndPaymentStatus(
                 refTableId,
-                List.of(OrderItemState.REJECTED, OrderItemState.PAID)
+                OrderPaymentStatus.getAllPaidStatus()
         );
     }
 

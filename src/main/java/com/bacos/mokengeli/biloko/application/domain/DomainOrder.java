@@ -13,7 +13,8 @@ import java.util.Map;
 public class DomainOrder {
     private Long id;
     private String tenantCode;
-    private String refTable;
+    private String tableName;
+    private Long tableId;
     private String employeeNumber;  // Waiter identifier by employee number
     private List<DomainOrderItem> items;
     private double totalPrice;

@@ -37,7 +37,7 @@ public class OrderController {
                     .dishId(x.getDishId())
                     .build()).toList();
 
-            return orderService.createOrder(request.getCurrencyId(), request.getRefTable(), createOrderItems);
+            return orderService.createOrder(request.getCurrencyId(), request.getTableId(), createOrderItems);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
@@ -88,6 +88,7 @@ public class OrderController {
 
     /**
      * to mark item ready means has been cooked
+     *
      * @param id: id of orderItem to cook
      */
     @PreAuthorize("hasAuthority('COOK_DISH')")
@@ -103,6 +104,7 @@ public class OrderController {
 
     /**
      * the dish has been served to the client
+     *
      * @param id: orderItem to reject
      */
     @PreAuthorize("hasAuthority('SERVE_DISH')")
