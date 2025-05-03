@@ -57,10 +57,11 @@ public class PaymentService {
                     && !OrderPaymentStatus.UNPAID.equals(paymentStatus)) {
                 this.orderNotificationService.notifyStateChange(
                         orderId,
+                        domainOrder.getTableId(),
                         OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE,
                         paymentStatus.name(),
                         paymentStatus.name(),
-                        "No Paiement register because already fully paid."
+                        "No payment register because already fully paid."
                 );
                 return domainOrder;
             }
@@ -77,6 +78,7 @@ public class PaymentService {
             // Notifier du changement de statut de paiement
             this.orderNotificationService.notifyStateChange(
                     orderId,
+                    domainOrder.getTableId(),
                     OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE,
                     paymentStatus.name(),
                     updatedOrder.getPaymentStatus().name()

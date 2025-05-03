@@ -69,7 +69,8 @@ public class OrderService {
                     connectedUser.getEmployeeNumber());
             throw new ServiceException(errorId, "An internal error occurred");
         }
-        this.orderNotificationService.notifyStateChange(order.get().getId(), OrderNotification.OrderNotificationStatus.NEW_ORDER,
+        this.orderNotificationService.notifyStateChange(order.get().getId(), refTableId,
+                OrderNotification.OrderNotificationStatus.NEW_ORDER,
                 "", OrderItemState.PENDING.name());
 
         return order.get();
@@ -117,25 +118,33 @@ public class OrderService {
         return totalPrice;
     }
 
-    public void changeOrderItemState(Long orderDishId, OrderItemState orderItemState) throws ServiceException {
+    public void changeOrderItemState(Long orderItemId, OrderItemState orderItemState) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
-        boolean isOrderItemOfTenant = this.orderPort.isOrderItemOfTenant(orderDishId, connectedUser.getTenantCode());
+        boolean isOrderItemOfTenant = this.orderPort.isOrderItemOfTenant(orderItemId, connectedUser.getTenantCode());
         if (!isOrderItemOfTenant) {
             String errorId = UUID.randomUUID().toString();
             log.error("[{}]: User [{}] try to [{}] orderItem [{}] of other tenant code [{}]", errorId,
-                    connectedUser.getEmployeeNumber(), orderItemState, orderDishId, connectedUser.getTenantCode());
+                    connectedUser.getEmployeeNumber(), orderItemState, orderItemId, connectedUser.getTenantCode());
             throw new ServiceException(errorId, "A problem occured with the dish.");
         }
+        Optional<DomainOrder> OptOrder = this.orderPort.getOrderByOrderItemId(orderItemId);
+        if (OptOrder.isEmpty()) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}]. No Order found for this orderItemId {} that exist on database.", errorId,
+                    connectedUser.getEmployeeNumber(), orderItemId);
+            throw new ServiceException(errorId, "A server error occurred.");
+        }
+        DomainOrder domainOrder = OptOrder.get();
         try {
-            OrderItemState currentState = this.orderPort.getOrderItemState(orderDishId);
+            OrderItemState currentState = this.orderPort.getOrderItemState(orderItemId);
 
             if (OrderItemState.READY.equals(orderItemState)) {
-                this.orderPort.prepareOrderItem(orderDishId);
+                this.orderPort.prepareOrderItem(orderItemId);
             } else {
-                this.orderPort.changeOrderItemState(orderDishId, orderItemState);
+                this.orderPort.changeOrderItemState(orderItemId, orderItemState);
             }
-            this.orderNotificationService.notifyStateChange(orderDishId, OrderNotification.OrderNotificationStatus.DISH_UPDATE, currentState.name(), orderItemState.name());
-
+            this.orderNotificationService.notifyStateChange(domainOrder.getId(), domainOrder.getTableId(),
+                    OrderNotification.OrderNotificationStatus.DISH_UPDATE, currentState.name(), orderItemState.name());
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
                     connectedUser.getEmployeeNumber(), e.getMessage());
@@ -181,6 +190,7 @@ public class OrderService {
         try {
             DomainOrder domainOrder = this.orderPort.addItems(order);
             this.orderNotificationService.notifyStateChange(domainOrder.getId(),
+                    domainOrder.getTableId(),
                     OrderNotification.OrderNotificationStatus.DISH_UPDATE, OrderItemState.PENDING.name(),
                     OrderItemState.PENDING.name());
             return domainOrder;

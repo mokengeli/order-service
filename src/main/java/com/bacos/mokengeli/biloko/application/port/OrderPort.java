@@ -67,4 +67,5 @@ public interface OrderPort {
      */
     List<DomainOrder> getOrdersRequiringPayment(String tenantCode);
 
+    Optional<DomainOrder> getOrderByOrderItemId(Long orderItemId) throws ServiceException;
 }

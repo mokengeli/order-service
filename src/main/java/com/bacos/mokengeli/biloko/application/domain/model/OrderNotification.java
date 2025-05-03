@@ -10,8 +10,9 @@ import java.time.LocalDateTime;
 @Builder
 public class OrderNotification {
 
-    private String tenantCode;
     private Long orderId;
+    private Long tableId;
+    private String tenantCode;
     private String newState;
     private String previousState;
     private OrderNotificationStatus orderStatus;

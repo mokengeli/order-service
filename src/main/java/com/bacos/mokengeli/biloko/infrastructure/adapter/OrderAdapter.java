@@ -354,6 +354,14 @@ public class OrderAdapter implements OrderPort {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public Optional<DomainOrder> getOrderByOrderItemId(Long orderItemId) throws ServiceException {
+        Order order = this.orderRepository.findByItemId(orderItemId)
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                        "No Order found with id = " + orderItemId));
+        return Optional.of(OrderMapper.toDomain(order));
+    }
+
     // Méthode helper pour mapper une Order en DomainOrder avec paiements
     private DomainOrder orderToDomainWithPayments(Order order) {
         DomainOrder domainOrder = OrderMapper.toDomain(order);

@@ -22,13 +22,14 @@ public class OrderNotificationService {
         this.orderNotification = orderNotification;
     }
 
-    public void notifyStateChange(Long orderId, OrderNotification.OrderNotificationStatus orderNotificationStatus,
+    public void notifyStateChange(Long orderId, Long tableId, OrderNotification.OrderNotificationStatus orderNotificationStatus,
                                   String previousState, String newState, String additionnalInfo) {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
 
         String tenantCode = connectedUser.getTenantCode();
         OrderNotification notification = OrderNotification.builder()
                 .orderId(orderId)
+                .tableId(tableId)
                 .previousState(previousState)
                 .newState(newState)
                 .tenantCode(tenantCode)
@@ -38,8 +39,8 @@ public class OrderNotificationService {
         this.orderNotification.notifyWebSocketUser(notification);
     }
 
-    public void notifyStateChange(Long orderId, OrderNotification.OrderNotificationStatus orderNotificationStatus,
+    public void notifyStateChange(Long orderId, Long tableId, OrderNotification.OrderNotificationStatus orderNotificationStatus,
                                   String previousState, String newState) {
-        notifyStateChange(orderId, orderNotificationStatus, previousState, newState, null);
+        notifyStateChange(orderId, tableId, orderNotificationStatus, previousState, newState, null);
     }
 }

@@ -10,11 +10,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o, i FROM Order o JOIN o.items i WHERE o.tenantContext.tenantCode = :tenantCode AND i.state = :orderItemState")
-    List<Object[]> findOrderAndItemsByTenantCodeAndItemState(@Param("tenantCode") String tenantCode, @Param("orderItemState") OrderItemState orderItemState);
+    List<Object[]> findOrderAndItemsByTenantCodeAndItemState(@Param("tenantCode") String tenantCode,
+                                                             @Param("orderItemState") OrderItemState orderItemState);
 
     @Query("SELECT DISTINCT o FROM Order o JOIN o.items i " +
             "WHERE o.refTable.id = :refTableId " +
@@ -53,5 +55,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("statuses") Collection<OrderPaymentStatus> statuses,
             @Param("tenantCode") String tenantCode
     );
+
+    @Query("SELECT o FROM Order o JOIN o.items i WHERE i.id = :itemId")
+    Optional<Order> findByItemId(@Param("itemId") Long itemId);
 
 }
