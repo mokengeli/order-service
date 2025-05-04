@@ -34,6 +34,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("paymentStatuses") Collection<OrderPaymentStatus> paymentStatuses
     );
 
+    @Query("SELECT DISTINCT o FROM Order o " +
+            "WHERE o.refTable.id = :refTableId " +
+            "  AND o.paymentStatus NOT IN :paymentStatuses")
+    boolean isRefTableOccupied(
+            @Param("refTableId") Long refTableId,
+            @Param("paymentStatuses") Collection<OrderPaymentStatus> paymentStatuses
+    );
+
     default List<Order> findActiveOrdersByRefTableId(Long refTableId) {
         return findOrdersByRefTableAndPaymentStatus(
                 refTableId,
@@ -58,5 +66,25 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT o FROM Order o JOIN o.items i WHERE i.id = :itemId")
     Optional<Order> findByItemId(@Param("itemId") Long itemId);
+
+
+    // 1) Méthode plus efficace : existe-t-il une commande non payée ?
+    @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END " +
+            "FROM Order o " +
+            "WHERE o.refTable.id = :refTableId " +
+            "  AND o.paymentStatus NOT IN :paymentStatuses")
+    boolean existsActiveOrderByRefTableId(
+            @Param("refTableId") Long refTableId,
+            @Param("paymentStatuses") Collection<OrderPaymentStatus> paymentStatuses
+    );
+
+    // 2) Default pour savoir si la table est libre
+    default boolean isTableFree(Long refTableId) {
+        // Retourne true si PAS de commande active
+        return !existsActiveOrderByRefTableId(
+                refTableId,
+                OrderPaymentStatus.getAllPaidStatus()
+        );
+    }
 
 }

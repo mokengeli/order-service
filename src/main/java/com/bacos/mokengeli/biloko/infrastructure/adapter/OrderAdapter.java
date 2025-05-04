@@ -362,6 +362,11 @@ public class OrderAdapter implements OrderPort {
         return Optional.of(OrderMapper.toDomain(order));
     }
 
+    @Override
+    public boolean isTableFree(Long refTableId) {
+        return this.orderRepository.isTableFree(refTableId);
+    }
+
     // Méthode helper pour mapper une Order en DomainOrder avec paiements
     private DomainOrder orderToDomainWithPayments(Order order) {
         DomainOrder domainOrder = OrderMapper.toDomain(order);

@@ -2,6 +2,7 @@ package com.bacos.mokengeli.biloko.application.service;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
+import com.bacos.mokengeli.biloko.application.domain.TableState;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.domain.model.OrderNotification;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -50,6 +51,13 @@ public class PaymentService {
 
             DomainOrder domainOrder = order.get();
             OrderPaymentStatus paymentStatus = domainOrder.getPaymentStatus();
+
+            boolean tableFree = this.orderPort.isTableFree(domainOrder.getTableId());
+            TableState tableState = TableState.OCCUPIED;
+            if (tableFree) {
+                tableState = TableState.FREE;
+            }
+
             // si on est pas dans un etat necessitant un paiement cela signifie que la commande
             // a deja été réglé
             // on notifie quand meme
@@ -61,6 +69,7 @@ public class PaymentService {
                         OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE,
                         paymentStatus.name(),
                         paymentStatus.name(),
+                        tableState.name(),
                         "No payment register because already fully paid."
                 );
                 return domainOrder;
@@ -81,6 +90,7 @@ public class PaymentService {
                     domainOrder.getTableId(),
                     OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE,
                     paymentStatus.name(),
+                    tableState.name(),
                     updatedOrder.getPaymentStatus().name()
             );
 

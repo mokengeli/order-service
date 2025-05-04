@@ -2,6 +2,8 @@ package com.bacos.mokengeli.biloko.application.service;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
+import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
+import com.bacos.mokengeli.biloko.application.domain.TableState;
 import com.bacos.mokengeli.biloko.application.domain.model.*;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
@@ -71,7 +73,7 @@ public class OrderService {
         }
         this.orderNotificationService.notifyStateChange(order.get().getId(), refTableId,
                 OrderNotification.OrderNotificationStatus.NEW_ORDER,
-                "", OrderItemState.PENDING.name());
+                "", OrderItemState.PENDING.name(), TableState.OCCUPIED.name());
 
         return order.get();
     }
@@ -143,8 +145,18 @@ public class OrderService {
             } else {
                 this.orderPort.changeOrderItemState(orderItemId, orderItemState);
             }
+
+            boolean isTableFree = this.orderPort.isTableFree(domainOrder.getTableId());
+            if (isTableFree) {
+                this.orderNotificationService.notifyStateChange(domainOrder.getId(), domainOrder.getTableId(),
+                        OrderNotification.OrderNotificationStatus.DISH_UPDATE, currentState.name(), orderItemState.name(),
+                        TableState.FREE.name());
+                return;
+            }
+
             this.orderNotificationService.notifyStateChange(domainOrder.getId(), domainOrder.getTableId(),
-                    OrderNotification.OrderNotificationStatus.DISH_UPDATE, currentState.name(), orderItemState.name());
+                    OrderNotification.OrderNotificationStatus.DISH_UPDATE, currentState.name(), orderItemState.name(),
+                    TableState.OCCUPIED.name());
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
                     connectedUser.getEmployeeNumber(), e.getMessage());
@@ -192,7 +204,7 @@ public class OrderService {
             this.orderNotificationService.notifyStateChange(domainOrder.getId(),
                     domainOrder.getTableId(),
                     OrderNotification.OrderNotificationStatus.DISH_UPDATE, OrderItemState.PENDING.name(),
-                    OrderItemState.PENDING.name());
+                    OrderItemState.PENDING.name(), TableState.OCCUPIED.name());
             return domainOrder;
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
