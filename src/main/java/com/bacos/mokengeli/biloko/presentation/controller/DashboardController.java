@@ -1,6 +1,7 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
+import com.bacos.mokengeli.biloko.application.domain.DomainTopDish;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.DashboardService;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/order/dashboard")
@@ -30,6 +32,22 @@ public class DashboardController {
     ) {
         try {
             return dashboardService.getRevenue(startDate, endDate, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
+    @GetMapping("/dishes/top")
+    public List<DomainTopDish> getTopDishes(
+            @RequestParam(defaultValue = "5") int limit,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam String tenantCode
+    ) {
+        try {
+            return dashboardService.getTopDishes(limit, startDate, endDate, tenantCode);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(
                     HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()

@@ -2,16 +2,21 @@ package com.bacos.mokengeli.biloko.application.service;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
+import com.bacos.mokengeli.biloko.application.domain.DomainTopDish;
 import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
+import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DashboardPort;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class DashboardService {
 
@@ -20,16 +25,20 @@ public class DashboardService {
 
     @Autowired
     public DashboardService(DashboardPort dashboardPort, UserAppService userAppService) {
-        this.dashboardPort  = dashboardPort;
+        this.dashboardPort = dashboardPort;
         this.userAppService = userAppService;
     }
 
     public DomainDish.DomainRevenueDashboard getRevenue(LocalDate startDate, LocalDate endDate, String tenantCode)
             throws ServiceException {
-        // Vérification multi-tenant identique aux autres services :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
-        var user = userAppService.getConnectedUser();
-        if (!userAppService.isAdminUser() && !user.getTenantCode().equals(tenantCode)) {
-            throw new ServiceException("PERM", "Accès refusé pour ce tenant");
+
+        // Vérification multi-tenant identique aux autres services
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() && !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get revenue of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
         }
 
         List<DomainOrder> orders = dashboardPort.getOrdersBetweenDates(startDate, endDate, tenantCode);
@@ -75,6 +84,22 @@ public class DashboardService {
                 orderDtos,
                 new DomainDish.DomainBreakdown(fullPayments, discountedPayments)
         );
+    }
+
+    public List<DomainTopDish> getTopDishes(
+            int limit,
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    ) throws ServiceException {
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() && !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get top dishes of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardPort.getTopDishesServed(startDate, endDate, tenantCode, limit);
     }
 }
 
