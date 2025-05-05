@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -87,4 +88,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         );
     }
 
+    @Query("SELECT o FROM Order o "
+            + "WHERE o.createdAt BETWEEN :start AND :end "
+            + "  AND o.tenantContext.tenantCode = :tenantCode")
+    List<Order> findByCreatedAtBetweenAndTenantContextTenantCode(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("tenantCode") String tenantCode
+    );
 }
