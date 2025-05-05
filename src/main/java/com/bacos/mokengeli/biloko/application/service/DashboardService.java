@@ -1,10 +1,8 @@
 package com.bacos.mokengeli.biloko.application.service;
 
+import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
-import com.bacos.mokengeli.biloko.application.domain.model.DomainBreakdown;
-import com.bacos.mokengeli.biloko.application.domain.model.DomainRevenueDashboard;
-import com.bacos.mokengeli.biloko.application.domain.model.DomainOrderDashboard;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DashboardPort;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +24,7 @@ public class DashboardService {
         this.userAppService = userAppService;
     }
 
-    public DomainRevenueDashboard getRevenue(LocalDate startDate, LocalDate endDate, String tenantCode)
+    public DomainDish.DomainRevenueDashboard getRevenue(LocalDate startDate, LocalDate endDate, String tenantCode)
             throws ServiceException {
         // Vérification multi-tenant identique aux autres services :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
         var user = userAppService.getConnectedUser();
@@ -60,8 +58,8 @@ public class DashboardService {
                 .sum();
 
         // 4) Map en DTO pour le front
-        List<DomainOrderDashboard> orderDtos = orders.stream()
-                .map(o -> new DomainOrderDashboard(
+        List<DomainDish.DomainOrderDashboard> orderDtos = orders.stream()
+                .map(o -> new DomainDish.DomainOrderDashboard(
                         o.getId(),
                         o.getOrderDate().toLocalDate(),
                         o.getTotalPrice(),
@@ -70,12 +68,12 @@ public class DashboardService {
                 ))
                 .collect(Collectors.toList());
 
-        return new DomainRevenueDashboard(
+        return new DomainDish.DomainRevenueDashboard(
                 realRevenue,
                 theoreticalRevenue,
                 orders.isEmpty() ? null : orders.get(0).getCurrency(),
                 orderDtos,
-                new DomainBreakdown(fullPayments, discountedPayments)
+                new DomainDish.DomainBreakdown(fullPayments, discountedPayments)
         );
     }
 }
