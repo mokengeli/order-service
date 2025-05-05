@@ -2,10 +2,7 @@ package com.bacos.mokengeli.biloko.application.service;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainBreakdown;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainOrderDashboard;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainRevenueDashboard;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainTopDish;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.*;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DashboardPort;
@@ -103,5 +100,25 @@ public class DashboardService {
         }
         return dashboardPort.getTopDishesServed(startDate, endDate, tenantCode, limit);
     }
+
+    public List<DomainCategoryBreakdown> getBreakdownByCategory(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    ) throws ServiceException {
+        // Contrôle multi-tenant
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get the breakdown by category of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardPort.getBreakdownByCategory(
+                startDate, endDate, tenantCode
+        );
+    }
+
 }
 

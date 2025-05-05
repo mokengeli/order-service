@@ -65,7 +65,22 @@ public class DashboardAdapter implements DashboardPort {
     }
 
     @Override
-    public List<DomainCategoryBreakdown> getBreakdownByCategory(LocalDate startDate, LocalDate endDate, String tenantCode) {
-        return List.of();
+    public List<DomainCategoryBreakdown> getBreakdownByCategory(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    ) {
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+
+        return orderItemRepository.findBreakdownByCategory(
+                        start, end, tenantCode, OrderItemState.SERVED
+                ).stream()
+                .map(p -> new DomainCategoryBreakdown(
+                        p.getCategoryName(),
+                        p.getValue(),
+                        p.getRevenue()
+                ))
+                .toList();
     }
 }
