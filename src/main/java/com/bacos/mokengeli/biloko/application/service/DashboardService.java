@@ -1,9 +1,11 @@
 package com.bacos.mokengeli.biloko.application.service;
 
-import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
-import com.bacos.mokengeli.biloko.application.domain.DomainTopDish;
 import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainBreakdown;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainOrderDashboard;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainRevenueDashboard;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainTopDish;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DashboardPort;
@@ -29,7 +31,7 @@ public class DashboardService {
         this.userAppService = userAppService;
     }
 
-    public DomainDish.DomainRevenueDashboard getRevenue(LocalDate startDate, LocalDate endDate, String tenantCode)
+    public DomainRevenueDashboard getRevenue(LocalDate startDate, LocalDate endDate, String tenantCode)
             throws ServiceException {
 
         // Vérification multi-tenant identique aux autres services
@@ -67,8 +69,8 @@ public class DashboardService {
                 .sum();
 
         // 4) Map en DTO pour le front
-        List<DomainDish.DomainOrderDashboard> orderDtos = orders.stream()
-                .map(o -> new DomainDish.DomainOrderDashboard(
+        List<DomainOrderDashboard> orderDtos = orders.stream()
+                .map(o -> new DomainOrderDashboard(
                         o.getId(),
                         o.getOrderDate().toLocalDate(),
                         o.getTotalPrice(),
@@ -77,12 +79,12 @@ public class DashboardService {
                 ))
                 .collect(Collectors.toList());
 
-        return new DomainDish.DomainRevenueDashboard(
+        return new DomainRevenueDashboard(
                 realRevenue,
                 theoreticalRevenue,
-                orders.isEmpty() ? null : orders.get(0).getCurrency(),
+                orders.isEmpty() ? null : orders.getFirst().getCurrency(),
                 orderDtos,
-                new DomainDish.DomainBreakdown(fullPayments, discountedPayments)
+                new DomainBreakdown(fullPayments, discountedPayments)
         );
     }
 

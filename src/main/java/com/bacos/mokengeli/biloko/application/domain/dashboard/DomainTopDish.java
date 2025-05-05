@@ -1,4 +1,4 @@
-package com.bacos.mokengeli.biloko.application.domain;
+package com.bacos.mokengeli.biloko.application.domain.dashboard;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

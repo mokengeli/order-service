@@ -1,14 +1,17 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
-import com.bacos.mokengeli.biloko.application.domain.DomainDish;
-import com.bacos.mokengeli.biloko.application.domain.DomainTopDish;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainRevenueDashboard;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainTopDish;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.DashboardService;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,7 +28,7 @@ public class DashboardController {
     }
 
     @GetMapping("/revenue")
-    public DomainDish.DomainRevenueDashboard getRevenue(
+    public DomainRevenueDashboard getRevenue(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam String tenantCode
