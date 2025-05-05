@@ -62,6 +62,81 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             @Param("servedState") OrderItemState servedState
     );
 
+    /**
+     * Total des plats en état SERVED sur la plage donnée.
+     */
+    @Query("""
+            SELECT COUNT(i)
+              FROM OrderItem i
+              JOIN i.order o
+             WHERE i.state = :servedState
+               AND o.createdAt BETWEEN :start AND :end
+               AND o.tenantContext.tenantCode = :tenantCode
+            """)
+    long countServedItems(
+            @Param("servedState") OrderItemState servedState,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("tenantCode") String tenantCode
+    );
+
+    @Query("""
+            SELECT c.name            AS categoryName,
+                   COUNT(i)           AS value
+              FROM OrderItem i
+              JOIN i.order o
+              JOIN i.dish d
+              JOIN d.dishCategories dc
+              JOIN dc.category c
+             WHERE i.state = :servedState
+               AND o.createdAt BETWEEN :start AND :end
+               AND o.tenantContext.tenantCode = :tenantCode
+             GROUP BY c.name
+             ORDER BY value DESC
+            """)
+    List<CategoryStatProjection> findDishesPerCategory(
+            @Param("servedState") OrderItemState servedState,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("tenantCode") String tenantCode
+    );
+
+    @Query("""
+            SELECT HOUR(i.createdAt) AS hour,
+                   COUNT(i)           AS value
+              FROM OrderItem i
+              JOIN i.order o
+             WHERE i.state = :servedState
+               AND o.createdAt BETWEEN :start AND :end
+               AND o.tenantContext.tenantCode = :tenantCode
+             GROUP BY HOUR(i.createdAt)
+             ORDER BY hour
+            """)
+    List<HourStatProjection> findDishesPerHour(
+            @Param("servedState") OrderItemState servedState,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("tenantCode") String tenantCode
+    );
+
+    /**
+     * Nombre de plats servis par catégorie.
+     */
+    interface CategoryStatProjection {
+        String getCategoryName();
+
+        Long getValue();
+    }
+
+    /**
+     * Nombre de plats servis par heure de la commande (création).
+     */
+    interface HourStatProjection {
+        Integer getHour();
+
+        Long getValue();
+    }
+
     interface CategoryBreakdownProjection {
         String getCategoryName();
 

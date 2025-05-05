@@ -120,5 +120,22 @@ public class DashboardService {
         );
     }
 
+    public DomainDishStats getDishStats(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    ) throws ServiceException {
+        // contrôle multi-tenant
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get the dish stats of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardPort.getDishStats(startDate, endDate, tenantCode);
+    }
+
 }
 

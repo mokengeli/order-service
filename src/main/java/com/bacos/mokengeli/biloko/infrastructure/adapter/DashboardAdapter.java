@@ -2,8 +2,7 @@ package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainCategoryBreakdown;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainTopDish;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.*;
 import com.bacos.mokengeli.biloko.application.port.DashboardPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.OrderMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.Order;
@@ -82,5 +81,39 @@ public class DashboardAdapter implements DashboardPort {
                         p.getRevenue()
                 ))
                 .toList();
+    }
+
+    @Override
+    public DomainDishStats getDishStats(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    ) {
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+
+        long total = orderItemRepository.countServedItems(
+                OrderItemState.SERVED, start, end, tenantCode
+        );
+
+        var perCategory = orderItemRepository.findDishesPerCategory(
+                        OrderItemState.SERVED, start, end, tenantCode
+                ).stream()
+                .map(p -> new DomainDishCategoryStat(
+                        p.getCategoryName(),
+                        p.getValue()
+                ))
+                .collect(Collectors.toList());
+
+        var perHour = orderItemRepository.findDishesPerHour(
+                        OrderItemState.SERVED, start, end, tenantCode
+                ).stream()
+                .map(p -> new DomainDishHourStat(
+                        p.getHour(),
+                        p.getValue()
+                ))
+                .collect(Collectors.toList());
+
+        return new DomainDishStats(total, perCategory, perHour);
     }
 }

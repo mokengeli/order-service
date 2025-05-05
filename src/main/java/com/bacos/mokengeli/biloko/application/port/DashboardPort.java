@@ -2,6 +2,7 @@ package com.bacos.mokengeli.biloko.application.port;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainCategoryBreakdown;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainDishStats;
 import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainTopDish;
 
 import java.time.LocalDate;
@@ -18,6 +19,12 @@ public interface DashboardPort {
     );
 
     List<DomainCategoryBreakdown> getBreakdownByCategory(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    );
+
+    DomainDishStats getDishStats(
             LocalDate startDate,
             LocalDate endDate,
             String tenantCode

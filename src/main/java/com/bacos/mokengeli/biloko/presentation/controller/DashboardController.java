@@ -1,6 +1,7 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
 import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainCategoryBreakdown;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainDishStats;
 import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainRevenueDashboard;
 import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainTopDish;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -71,6 +72,23 @@ public class DashboardController {
             return dashboardService.getBreakdownByCategory(
                     startDate, endDate, tenantCode
             );
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
+    @GetMapping("/dishes/stats")
+    public DomainDishStats getDishStats(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+            @RequestParam String tenantCode
+    ) {
+        try {
+            return dashboardService.getDishStats(startDate, endDate, tenantCode);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(
                     HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
