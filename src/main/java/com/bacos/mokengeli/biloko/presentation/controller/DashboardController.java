@@ -1,9 +1,6 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainCategoryBreakdown;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainDishStats;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainRevenueDashboard;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainTopDish;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.*;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.DashboardService;
 import com.bacos.mokengeli.biloko.presentation.exception.ResponseStatusWrapperException;
@@ -17,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/order/dashboard")
@@ -89,6 +87,21 @@ public class DashboardController {
     ) {
         try {
             return dashboardService.getDishStats(startDate, endDate, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
+    @GetMapping("/hourly-distribution")
+    public List<DomainHourlyOrderStat> getHourlyDistribution(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam String tenantCode
+    ) {
+        try {
+            return dashboardService.getHourlyDistribution(date, tenantCode);
+
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(
                     HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()

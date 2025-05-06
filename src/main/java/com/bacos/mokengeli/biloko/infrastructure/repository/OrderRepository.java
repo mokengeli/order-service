@@ -96,4 +96,25 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("end") LocalDateTime end,
             @Param("tenantCode") String tenantCode
     );
+
+    @Query("""
+            SELECT HOUR(o.createdAt)    AS hour,
+                   COUNT(o)              AS orders
+              FROM Order o
+             WHERE o.createdAt BETWEEN :start AND :end
+               AND o.tenantContext.tenantCode = :tenantCode
+             GROUP BY HOUR(o.createdAt)
+             ORDER BY hour
+            """)
+    List<HourlyOrderProjection> findOrdersPerHour(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end,
+            @Param("tenantCode") String tenantCode
+    );
+
+    interface HourlyOrderProjection {
+        Integer getHour();
+
+        Long getOrders();
+    }
 }

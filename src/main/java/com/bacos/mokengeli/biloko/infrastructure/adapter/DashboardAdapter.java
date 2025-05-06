@@ -116,4 +116,21 @@ public class DashboardAdapter implements DashboardPort {
 
         return new DomainDishStats(total, perCategory, perHour);
     }
+
+    @Override
+    public List<DomainHourlyOrderStat> getHourlyOrderDistribution(
+            LocalDate date,
+            String tenantCode
+    ) {
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.atTime(LocalTime.MAX);
+
+        return orderRepository.findOrdersPerHour(start, end, tenantCode)
+                .stream()
+                .map(p -> new DomainHourlyOrderStat(
+                        p.getHour(),
+                        p.getOrders()
+                ))
+                .toList();
+    }
 }
