@@ -14,14 +14,14 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "tenant_context_categories")
-@IdClass(TenantContextCategoryId.class)
-public class TenantContextCategory {
+@Table(name = "tenants_categories")
+@IdClass(TenantCategoryId.class)
+public class TenantCategory {
 
     @Id
     @ManyToOne
-    @JoinColumn(name = "tenant_context_id", nullable = false)
-    private TenantContext tenantContext;
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @Id
     @ManyToOne

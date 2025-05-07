@@ -1,183 +1,253 @@
--- Create schema
-CREATE SCHEMA IF NOT EXISTS order_service_schema;
+/* =============================================================
+   SCHÉMA
+   =============================================================*/
+CREATE SCHEMA IF NOT EXISTS order_schema;
+SET search_path TO order_schema;
 
--- TenantContext Table
-CREATE TABLE order_service_schema.tenant_context (
-                                                     id SERIAL PRIMARY KEY,
-                                                     tenant_code VARCHAR(255) NOT NULL UNIQUE,
-                                                     tenant_name VARCHAR(255) NOT NULL
-);
---
--- Create the ref_table linked to tenant
-CREATE TABLE order_service_schema.ref_tables (
-                           id SERIAL PRIMARY KEY,
-                           tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                           name VARCHAR(255) NOT NULL,
-                           created_at TIMESTAMP NOT NULL,
-                           updated_at TIMESTAMP,
-                           CONSTRAINT unique_name_per_tenant UNIQUE (name, tenant_context_id)
-
+/* =============================================================
+   TENANTS
+   =============================================================*/
+CREATE TABLE tenants (
+                         id           BIGSERIAL PRIMARY KEY,
+                         code  VARCHAR(255) NOT NULL UNIQUE,
+                         name  VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE order_service_schema.currencies (
-                                               id SERIAL PRIMARY KEY,
-                                               label VARCHAR(255) NOT NULL UNIQUE,
-                                               code VARCHAR(10) NOT NULL UNIQUE
+/* =============================================================
+   REF TABLES (Tables physiques du resto)
+   =============================================================*/
+CREATE TABLE ref_tables (
+                            id                BIGSERIAL PRIMARY KEY,
+                            tenant_id BIGINT    NOT NULL REFERENCES tenants(id),
+                            name              VARCHAR(255) NOT NULL,
+                            created_at        TIMESTAMP NOT NULL DEFAULT now(),
+                            updated_at        TIMESTAMP,
+                            CONSTRAINT unique_name_per_tenant UNIQUE (name, tenant_id)
 );
 
-
-
--- Dishes Table
-CREATE TABLE order_service_schema.dishes (
-                                             id SERIAL PRIMARY KEY,
-                                             name VARCHAR(255) NOT NULL,
-                                             price DECIMAL(10, 2) NOT NULL,
-                                             image_url TEXT,
-                                             tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                                             currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
-                                             created_at TIMESTAMP NOT NULL,
-                                             updated_at TIMESTAMP,
-                                             CONSTRAINT unique_dish_per_tenant UNIQUE (name, tenant_context_id)
+/* =============================================================
+   DEVISES
+   =============================================================*/
+CREATE TABLE currencies (
+                            id    BIGSERIAL PRIMARY KEY,
+                            label VARCHAR(255) NOT NULL UNIQUE,
+                            code  VARCHAR(10)  NOT NULL UNIQUE     -- ISO‑4217
 );
 
--- Dish products Table (for composite dishes)
-CREATE TABLE order_service_schema.dish_products (
-                                                    id SERIAL PRIMARY KEY,
-                                                    product_id INT NOT NULL,
-                                                    quantity DOUBLE PRECISION NOT NULL,
-                                                    dish_id INT NOT NULL REFERENCES order_service_schema.dishes(id) ON DELETE CASCADE,
-                                                    CONSTRAINT unique_product_id_per_dish_id UNIQUE (product_id, dish_id)
-
+/* =============================================================
+   DISHES
+   =============================================================*/
+CREATE TABLE dishes (
+                        id                BIGSERIAL PRIMARY KEY,
+                        name              VARCHAR(255) NOT NULL,
+                        price             NUMERIC(14,3) NOT NULL,
+                        tenant_id BIGINT NOT NULL REFERENCES tenants(id),
+                        currency_id       BIGINT NOT NULL REFERENCES currencies(id),
+                        created_at        TIMESTAMP NOT NULL DEFAULT now(),
+                        updated_at        TIMESTAMP,
+                        CONSTRAINT unique_dish_per_tenant UNIQUE (name, tenant_id)
 );
 
--- Menus Table
-CREATE TABLE order_service_schema.menus (
-                                            id SERIAL PRIMARY KEY,
-                                            name VARCHAR(255) NOT NULL,
-                                            price DECIMAL(10, 2) NOT NULL,
-                                            currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
-                                            image_url TEXT,
-                                            tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                                            created_at TIMESTAMP NOT NULL,
-                                            updated_at TIMESTAMP
+/* Pagination + vérif appartenance d’un plat */
+CREATE INDEX IF NOT EXISTS idx_dishes_tenant_id
+    ON dishes (tenant_id, id);
+
+/* =============================================================
+   DISH_PRODUCTS  (composition d’un plat)
+   =============================================================*/
+CREATE TABLE dish_products (
+                               id         BIGSERIAL PRIMARY KEY,
+                               product_id BIGINT       NOT NULL,                    -- FK vers inventaire
+                               quantity   DOUBLE PRECISION NOT NULL,
+                               dish_id    BIGINT NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+                               CONSTRAINT unique_product_id_per_dish_id UNIQUE (product_id, dish_id)
 );
 
--- Menu Dishes Table (for dishes inside a menu)
-CREATE TABLE order_service_schema.menu_dishes (
-                                                  menu_id INT NOT NULL REFERENCES order_service_schema.menus(id) ON DELETE CASCADE,
-                                                  dish_id INT NOT NULL REFERENCES order_service_schema.dishes(id),
-                                                  category VARCHAR(20) NOT NULL,
-                                                  PRIMARY KEY (menu_id, dish_id)
+/* =============================================================
+   MENUS
+   =============================================================*/
+CREATE TABLE menus (
+                       id                BIGSERIAL PRIMARY KEY,
+                       name              VARCHAR(255) NOT NULL,
+                       price             NUMERIC(10,2) NOT NULL,
+                       currency_id       BIGINT NOT NULL REFERENCES currencies(id),
+                       tenant_id BIGINT NOT NULL REFERENCES tenants(id),
+                       created_at        TIMESTAMP NOT NULL DEFAULT now(),
+                       updated_at        TIMESTAMP
 );
 
--- New Table: Menu Category Options
--- This table specifies the maximum number of choices allowed for each category within a menu.
-CREATE TABLE order_service_schema.menu_category_options (
-                                                            menu_id INT NOT NULL REFERENCES order_service_schema.menus(id) ON DELETE CASCADE,
-                                                            category VARCHAR(20) NOT NULL,
-                                                            max_choices INT NOT NULL,
-                                                            PRIMARY KEY (menu_id, category)
+/* =============================================================
+   MENU_DISHES  (plats contenus dans un menu)
+   =============================================================*/
+CREATE TABLE menu_dishes (
+                             menu_id   BIGINT NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
+                             dish_id   BIGINT NOT NULL REFERENCES dishes(id),
+                             category  VARCHAR(20) NOT NULL,
+                             PRIMARY KEY (menu_id, dish_id)
 );
 
+/* Recherche rapide des plats par catégorie dans un menu */
+CREATE INDEX IF NOT EXISTS idx_menu_dishes_category
+    ON menu_dishes (menu_id, category, dish_id);
 
--- Dish Price History Table (for price versioning)
-CREATE TABLE order_service_schema.dish_price_history (
-                                                         id SERIAL PRIMARY KEY,
-                                                         dish_id INT NOT NULL REFERENCES order_service_schema.dishes(id) ON DELETE CASCADE,
-                                                         price DECIMAL(10, 2) NOT NULL,
-                                                         start_date TIMESTAMP NOT NULL,
-                                                         end_date TIMESTAMP
+/* =============================================================
+   MENU_CATEGORY_OPTIONS  (règles de choix)
+   =============================================================*/
+CREATE TABLE menu_category_options (
+                                       menu_id     BIGINT NOT NULL REFERENCES menus(id) ON DELETE CASCADE,
+                                       category    VARCHAR(20) NOT NULL,
+                                       max_choices INT NOT NULL,
+                                       PRIMARY KEY (menu_id, category)
 );
 
--- Tenant Promotion Table (for promotions specific to a tenant's dishes or menus)
-CREATE TABLE order_service_schema.tenant_promotions (
-                                                        id SERIAL PRIMARY KEY,
-                                                        tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                                                        dish_id INT REFERENCES order_service_schema.dishes(id) ON DELETE SET NULL,
-                                                        menu_id INT REFERENCES order_service_schema.menus(id) ON DELETE SET NULL,
-                                                        discount_percentage DECIMAL(5, 2) NOT NULL,
-                                                        start_date TIMESTAMP NOT NULL,
-                                                        end_date TIMESTAMP NOT NULL,
-                                                        is_active BOOLEAN DEFAULT TRUE
+/* =============================================================
+   DISH_PRICE_HISTORY
+   =============================================================*/
+CREATE TABLE dish_price_history (
+                                    id        BIGSERIAL PRIMARY KEY,
+                                    dish_id   BIGINT NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
+                                    price     NUMERIC(14,3) NOT NULL,
+                                    start_date TIMESTAMP NOT NULL,
+                                    end_date   TIMESTAMP
 );
 
+/* Historique récent par plat */
+CREATE INDEX IF NOT EXISTS idx_dish_price_hist
+    ON dish_price_history (dish_id, start_date DESC);
 
--- Categories Table
-CREATE TABLE order_service_schema.categories (
-                                                 id SERIAL PRIMARY KEY,
-                                                 name VARCHAR(255) NOT NULL UNIQUE,
-                                                 image_url TEXT,
-                                                 created_at TIMESTAMP NOT NULL,
-                                                 updated_at TIMESTAMP
+/* =============================================================
+   TENANT_PROMOTIONS
+   =============================================================*/
+CREATE TABLE tenants_promotions (
+                                   id                BIGSERIAL PRIMARY KEY,
+                                   tenant_id BIGINT NOT NULL REFERENCES tenants(id),
+                                   dish_id           BIGINT REFERENCES dishes(id) ON DELETE SET NULL,
+                                   menu_id           BIGINT REFERENCES menus(id) ON DELETE SET NULL,
+                                   discount_percentage NUMERIC(5,2) NOT NULL,
+                                   start_date        TIMESTAMP NOT NULL,
+                                   end_date          TIMESTAMP NOT NULL,
+                                   is_active         BOOLEAN DEFAULT TRUE
 );
 
--- Dish Categories Table (for composite dishes and categories)
-CREATE TABLE order_service_schema.dish_categories (
-                                                      dish_id INT NOT NULL REFERENCES order_service_schema.dishes(id),
-                                                      category_id INT NOT NULL REFERENCES order_service_schema.categories(id),
-                                                      PRIMARY KEY (dish_id, category_id)
+/* =============================================================
+   CATEGORIES
+   =============================================================*/
+CREATE TABLE categories (
+                            id         BIGSERIAL PRIMARY KEY,
+                            name       VARCHAR(255) NOT NULL UNIQUE,
+                            created_at TIMESTAMP NOT NULL DEFAULT now(),
+                            updated_at TIMESTAMP
 );
 
--- Tenant Categories Table (for composite dishes and categories)
-CREATE TABLE order_service_schema.tenant_context_categories (
-                                                        tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                                                        category_id INT NOT NULL REFERENCES order_service_schema.categories(id),
-                                                        PRIMARY KEY (tenant_context_id, category_id)
+/* =============================================================
+   DISH_CATEGORIES  (plat ↔️ catégorie)
+   =============================================================*/
+CREATE TABLE dish_categories (
+                                 dish_id     BIGINT NOT NULL REFERENCES dishes(id),
+                                 category_id BIGINT NOT NULL REFERENCES categories(id),
+                                 PRIMARY KEY (dish_id, category_id)
 );
 
+/* Plats d'une catégorie */
+CREATE INDEX IF NOT EXISTS idx_dish_cat_cat
+    ON dish_categories (category_id, dish_id);
 
-CREATE TABLE order_service_schema.orders (
-                                             id SERIAL PRIMARY KEY,
-                                             ref_table_id INT NOT NULL REFERENCES order_service_schema.ref_tables(id),
-                                             total_price DECIMAL(12, 2) NOT NULL,
-                                             tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                                             currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
-                                             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                             updated_at TIMESTAMP,
-                                             payment_status VARCHAR(50) NOT NULL DEFAULT 'UNPAID',
-                                             paid_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.0
-);
-CREATE TABLE order_service_schema.order_items (
-                                                  id SERIAL PRIMARY KEY,
-                                                  state VARCHAR(50) NOT NULL,
-                                                  note TEXT,
-                                                  unit_price DECIMAL(12, 2) NOT NULL,
-                                                  order_id INT NOT NULL REFERENCES order_service_schema.orders(id),
-                                                  dish_id INT REFERENCES order_service_schema.dishes(id),
-                                                  currency_id INT NOT NULL REFERENCES order_service_schema.currencies(id),
-                                                  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+/* =============================================================
+   tenants_CATEGORIES  (catégories visibles par tenants)
+   =============================================================*/
+CREATE TABLE tenants_categories (
+                                           tenant_id BIGINT NOT NULL REFERENCES tenants(id),
+                                           category_id       BIGINT NOT NULL REFERENCES categories(id),
+                                           PRIMARY KEY (tenant_id, category_id)
 );
 
-CREATE TABLE order_service_schema.payment_transactions (
-                                                           id SERIAL PRIMARY KEY,
-                                                           order_id INT NOT NULL REFERENCES order_service_schema.orders(id),
-                                                           amount DECIMAL(12, 2) NOT NULL,
-                                                           payment_method VARCHAR(50) NOT NULL,
-                                                           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                                           employee_number VARCHAR(50) NOT NULL,
-                                                           notes TEXT,
-                                                           is_refund BOOLEAN NOT NULL DEFAULT false,
-                                                           discount_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.0
+/* Unicité + pagination par tenants */
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tenant_cat
+    ON tenants_categories (tenant_id, category_id);
+
+/* =============================================================
+   ORDERS
+   =============================================================*/
+CREATE TABLE orders (
+                        id                BIGSERIAL PRIMARY KEY,
+                        ref_table_id      BIGINT NOT NULL REFERENCES ref_tables(id),
+                        total_price       NUMERIC(14,3) NOT NULL,
+                        tenant_id BIGINT NOT NULL REFERENCES tenants(id),
+                        currency_id       BIGINT NOT NULL REFERENCES currencies(id),
+                        payment_status    VARCHAR(50)  NOT NULL DEFAULT 'UNPAID',
+                        paid_amount       NUMERIC(14,3) NOT NULL DEFAULT 0.0,
+                        created_at        TIMESTAMP NOT NULL DEFAULT now(),
+                        updated_at        TIMESTAMP
 );
 
-CREATE TABLE order_service_schema.orders_audit (
-                                                   id SERIAL PRIMARY KEY,
-                                                   audit_action VARCHAR(50) NOT NULL,  -- For example, "CREATED", "UPDATED", "DELETED"
-                                                   old_state VARCHAR(50),
-                                                   new_state VARCHAR(50),
-                                                   change_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                                   order_id INT NOT NULL REFERENCES order_service_schema.orders(id),
-                                                   tenant_context_id INT NOT NULL REFERENCES order_service_schema.tenant_context(id),
-                                                   changed_by VARCHAR(255) NOT NULL  -- Employee number or any identifier for the user who made the change
+/* Index existants + nouveaux pour reporting */
+CREATE INDEX IF NOT EXISTS idx_orders_tenant_id
+    ON orders (tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_orders_ref_table_id
+    ON orders (ref_table_id);
+
+CREATE INDEX IF NOT EXISTS idx_orders_payment_status
+    ON orders (payment_status);
+
+CREATE INDEX IF NOT EXISTS idx_orders_tenant_created
+    ON orders (tenant_id, created_at);
+
+/* =============================================================
+   ORDER_ITEMS
+   =============================================================*/
+CREATE TABLE order_items (
+                             id          BIGSERIAL PRIMARY KEY,
+                             state       VARCHAR(50) NOT NULL,
+                             note        TEXT,
+                             unit_price  NUMERIC(12,2) NOT NULL,
+                             order_id    BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+                             dish_id     BIGINT REFERENCES dishes(id),
+                             currency_id BIGINT NOT NULL REFERENCES currencies(id),
+                             created_at        TIMESTAMP NOT NULL DEFAULT now(),
+                             updated_at        TIMESTAMP
 );
 
-CREATE INDEX idx_orders_tenant_id ON order_service_schema.orders(tenant_context_id);
-CREATE INDEX idx_orders_ref_table_id ON order_service_schema.orders(ref_table_id);
-CREATE INDEX idx_payment_transactions_order_id ON order_service_schema.payment_transactions(order_id);
-CREATE INDEX idx_orders_payment_status ON order_service_schema.orders(payment_status);
+/* Agrégats dashboard & filtrage par état */
+CREATE INDEX IF NOT EXISTS idx_item_state_created
+    ON order_items (state, created_at);
 
+CREATE INDEX IF NOT EXISTS idx_item_dish_state
+    ON order_items (dish_id, state);
 
+/* =============================================================
+   PAYMENT_TRANSACTIONS
+   =============================================================*/
+CREATE TABLE payment_transactions (
+                                      id              BIGSERIAL PRIMARY KEY,
+                                      order_id        BIGINT NOT NULL REFERENCES orders(id),
+                                      amount          NUMERIC(14,3) NOT NULL,
+                                      payment_method  VARCHAR(50) NOT NULL,
+                                      created_at      TIMESTAMP NOT NULL DEFAULT now(),
+                                      employee_number VARCHAR(50) NOT NULL,
+                                      notes           TEXT,
+                                      is_refund       BOOLEAN NOT NULL DEFAULT false,
+                                      discount_amount NUMERIC(14,3) NOT NULL DEFAULT 0.0
+);
 
+/* Historique de paiement d’une commande */
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_order_id
+    ON payment_transactions (order_id, created_at DESC);
 
+/* =============================================================
+   ORDERS_AUDIT
+   =============================================================*/
+CREATE TABLE orders_audit (
+                              id               BIGSERIAL PRIMARY KEY,
+                              audit_action     VARCHAR(50) NOT NULL,  -- CREATED / UPDATED / DELETED
+                              old_state        VARCHAR(50),
+                              new_state        VARCHAR(50),
+                              change_timestamp TIMESTAMP NOT NULL DEFAULT now(),
+                              order_id         BIGINT NOT NULL REFERENCES orders(id),
+                              tenant_id BIGINT NOT NULL REFERENCES tenants(id),
+                              changed_by       VARCHAR(255) NOT NULL      -- employee_number
+);
 
-
+/* Historique d’un order */
+CREATE INDEX IF NOT EXISTS idx_audit_order_id
+    ON orders_audit (order_id, change_timestamp DESC);

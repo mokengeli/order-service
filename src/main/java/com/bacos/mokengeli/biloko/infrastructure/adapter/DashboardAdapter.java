@@ -35,7 +35,7 @@ public class DashboardAdapter implements DashboardPort {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
         List<Order> orders = orderRepository
-                .findByCreatedAtBetweenAndTenantContextTenantCode(start, end, tenantCode);
+                .findByCreatedAtBetweenAndTenantCode(start, end, tenantCode);
         return orders.stream()
                 .map(OrderMapper::toDomain)   // mappe en DomainOrder :contentReference[oaicite:0]{index=0}:contentReference[oaicite:1]{index=1}
                 .collect(Collectors.toList());

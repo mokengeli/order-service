@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,12 +27,10 @@ public class Menu {
     @Column(name = "price", nullable = false)
     private Double price;
 
-    @Column(name = "image_url")
-    private String imageUrl;
 
     @ManyToOne
-    @JoinColumn(name = "tenant_context_id", nullable = false)
-    private TenantContext tenantContext;  // Link to TenantContext
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

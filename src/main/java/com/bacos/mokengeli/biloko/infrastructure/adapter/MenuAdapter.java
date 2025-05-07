@@ -3,7 +3,6 @@ package com.bacos.mokengeli.biloko.infrastructure.adapter;
 import com.bacos.mokengeli.biloko.application.domain.*;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.MenuPort;
-import com.bacos.mokengeli.biloko.infrastructure.mapper.DishMapper;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.MenuMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.*;
 import com.bacos.mokengeli.biloko.infrastructure.repository.*;
@@ -21,16 +20,16 @@ import java.util.UUID;
 public class MenuAdapter implements MenuPort {
 
     private final MenuRepository menuRepository;
-    private final TenantContextRepository tenantContextRepository;
+    private final TenantRepository tenantRepository;
     private final DishRepository dishRepository;
     private final MenuDishRepository menuDishRepository;
     private final MenuCategoryOptionsRepository menuCategoryOptionsRepository;
     private final CurrencyRepository currencyRepository;
 
     @Autowired
-    public MenuAdapter(MenuRepository menuRepository, TenantContextRepository tenantContextRepository, DishRepository dishRepository, MenuDishRepository menuDishRepository, MenuCategoryOptionsRepository menuCategoryOptionsRepository, CurrencyRepository currencyRepository) {
+    public MenuAdapter(MenuRepository menuRepository, TenantRepository tenantRepository, DishRepository dishRepository, MenuDishRepository menuDishRepository, MenuCategoryOptionsRepository menuCategoryOptionsRepository, CurrencyRepository currencyRepository) {
         this.menuRepository = menuRepository;
-        this.tenantContextRepository = tenantContextRepository;
+        this.tenantRepository = tenantRepository;
         this.dishRepository = dishRepository;
         this.menuDishRepository = menuDishRepository;
         this.menuCategoryOptionsRepository = menuCategoryOptionsRepository;
@@ -54,9 +53,9 @@ public class MenuAdapter implements MenuPort {
 
         // Validate and set Tenant Context
         String tenantCode = domainMenu.getTenantCode();
-        TenantContext tenantContext = this.tenantContextRepository.findByTenantCode(tenantCode)
+        Tenant tenant = this.tenantRepository.findByCode(tenantCode)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No tenant found with tenant_code=" + tenantCode));
-        menu.setTenantContext(tenantContext);
+        menu.setTenant(tenant);
 
         // Set creation date
         menu.setCreatedAt(LocalDateTime.now());
@@ -106,7 +105,7 @@ public class MenuAdapter implements MenuPort {
 
     @Override
     public Optional<List<DomainMenu>> findAllMenusByTenant(String tenantCode) {
-        Optional<List<Menu>> optMenus = this.menuRepository.findByTenantContextTenantCode(tenantCode);
+        Optional<List<Menu>> optMenus = this.menuRepository.findByTenantCode(tenantCode);
         if (optMenus.isEmpty()) {
             return Optional.empty();
         }

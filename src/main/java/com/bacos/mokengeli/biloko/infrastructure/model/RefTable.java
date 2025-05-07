@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Builder
 @AllArgsConstructor
@@ -25,8 +24,8 @@ public class RefTable {
     private String name;
 
     @ManyToOne
-    @JoinColumn(name = "tenant_context_id", nullable = false)
-    private TenantContext tenantContext;  // Link to TenantContext
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

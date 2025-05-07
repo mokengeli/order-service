@@ -5,11 +5,11 @@ import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.CategoryPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.CategoryMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.Category;
-import com.bacos.mokengeli.biloko.infrastructure.model.TenantContext;
-import com.bacos.mokengeli.biloko.infrastructure.model.TenantContextCategory;
+import com.bacos.mokengeli.biloko.infrastructure.model.Tenant;
+import com.bacos.mokengeli.biloko.infrastructure.model.TenantCategory;
 import com.bacos.mokengeli.biloko.infrastructure.repository.CategoryRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.TenantCategoryRepository;
-import com.bacos.mokengeli.biloko.infrastructure.repository.TenantContextRepository;
+import com.bacos.mokengeli.biloko.infrastructure.repository.TenantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,28 +18,27 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 public class CategoryAdapter implements CategoryPort {
 
     private final CategoryRepository categoryRepository;
     private final TenantCategoryRepository tenantCategoryRepository;
-    private final TenantContextRepository tenantContextRepository;
+    private final TenantRepository tenantRepository;
 
     @Autowired
     public CategoryAdapter(CategoryRepository categoryRepository,
-                           TenantCategoryRepository tenantCategoryRepository, TenantContextRepository tenantContextRepository) {
+                           TenantCategoryRepository tenantCategoryRepository, TenantRepository tenantRepository) {
         this.categoryRepository = categoryRepository;
         this.tenantCategoryRepository = tenantCategoryRepository;
-        this.tenantContextRepository = tenantContextRepository;
+        this.tenantRepository = tenantRepository;
     }
 
     @Override
     public Page<DomainCategory> getAllCategoriesOfTenant(String tenantCode, int page, int size) throws ServiceException {
         Pageable pageable = PageRequest.of(page, size);
         return tenantCategoryRepository
-                .findByTenantContextTenantCode(tenantCode, pageable)
+                .findByTenantCode(tenantCode, pageable)
                 .map(tcCat -> CategoryMapper.toDomain(tcCat.getCategory()));
     }
 
@@ -62,17 +61,17 @@ public class CategoryAdapter implements CategoryPort {
     @Override
     public void assiginToTenant(Long categoryId, String tenantCode) throws ServiceException {
 
-        TenantContext tenant = this.tenantContextRepository.findByTenantCode(tenantCode)
+        Tenant tenant = this.tenantRepository.findByCode(tenantCode)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                         "No tenant found with the code " + tenantCode));
         Category category = this.categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                         "No category found with the name " + categoryId));
 
-        TenantContextCategory tenantContextCategory = TenantContextCategory.builder()
-                .tenantContext(tenant)
+        TenantCategory tenantCategory = TenantCategory.builder()
+                .tenant(tenant)
                 .category(category).build();
-        this.tenantCategoryRepository.save(tenantContextCategory);
+        this.tenantCategoryRepository.save(tenantCategory);
 
     }
 }

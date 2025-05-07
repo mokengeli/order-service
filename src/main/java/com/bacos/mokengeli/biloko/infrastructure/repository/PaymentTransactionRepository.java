@@ -12,6 +12,6 @@ import java.util.List;
 public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, Long> {
     List<PaymentTransaction> findByOrderIdOrderByCreatedAtDesc(Long orderId);
 
-    @Query("SELECT COUNT(p) > 0 FROM PaymentTransaction p WHERE p.id = :paymentId AND p.order.tenantContext.tenantCode = :tenantCode")
+    @Query("SELECT COUNT(p) > 0 FROM PaymentTransaction p WHERE p.id = :paymentId AND p.order.tenant.code = :tenantCode")
     boolean existsByIdAndTenantCode(@Param("paymentId") Long paymentId, @Param("tenantCode") String tenantCode);
 }

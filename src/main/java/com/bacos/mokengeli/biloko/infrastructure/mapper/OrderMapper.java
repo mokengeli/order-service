@@ -20,7 +20,7 @@ public class OrderMapper {
         return DomainOrder
                 .builder()
                 .id(order.getId())
-                .tenantCode(order.getTenantContext().getTenantCode())
+                .tenantCode(order.getTenant().getCode())
                 .tableName(order.getRefTable().getName())
                 .tableId(order.getRefTable().getId())
                 .items(orderItems)
@@ -43,7 +43,7 @@ public class OrderMapper {
         return DomainOrder
                 .builder()
                 .id(order.getId())
-                .tenantCode(order.getTenantContext().getTenantCode())
+                .tenantCode(order.getTenant().getCode())
                 .tableName(order.getRefTable().getName())
                 .tableId(order.getRefTable().getId())
                 .orderDate(order.getCreatedAt())
@@ -65,7 +65,7 @@ public class OrderMapper {
         return DomainOrder
                 .builder()
                 .id(order.getId())
-                .tenantCode(order.getTenantContext().getTenantCode())
+                .tenantCode(order.getTenant().getCode())
                 .tableName(order.getRefTable().getName())
                 .tableId(order.getRefTable().getId())
                 .items(orderItems)

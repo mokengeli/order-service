@@ -39,8 +39,8 @@ public class Order {
     @JoinColumn(name = "currency_id", nullable = false)
     private Currency currency;
     @ManyToOne
-    @JoinColumn(name = "tenant_context_id", nullable = false)
-    private TenantContext tenantContext;
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

@@ -1,15 +1,8 @@
 package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
-import com.bacos.mokengeli.biloko.application.domain.DomainCategory;
-import com.bacos.mokengeli.biloko.application.exception.ServiceException;
-import com.bacos.mokengeli.biloko.infrastructure.model.TenantContextCategory;
-import com.bacos.mokengeli.biloko.infrastructure.repository.CategoryRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.TenantCategoryRepository;
-import com.bacos.mokengeli.biloko.infrastructure.repository.TenantContextRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
-import java.util.*;
 
 @Slf4j
 @Component

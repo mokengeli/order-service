@@ -43,7 +43,7 @@ public class DishMapper {
                 .id(dish.getId())
                 .name(dish.getName())
                 .price(dish.getPrice())
-                .tenantCode(dish.getTenantContext().getTenantCode())
+                .tenantCode(dish.getTenant().getCode())
                 .categories(getCategories(dish))
                 .currency(getCurrency(dish))
                 .build();

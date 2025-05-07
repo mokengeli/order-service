@@ -4,14 +4,9 @@ import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainMenu;
 import com.bacos.mokengeli.biloko.application.domain.DomainMenuCategoryOptions;
 import com.bacos.mokengeli.biloko.infrastructure.model.Currency;
-import com.bacos.mokengeli.biloko.infrastructure.model.Dish;
 import com.bacos.mokengeli.biloko.infrastructure.model.Menu;
 import com.bacos.mokengeli.biloko.infrastructure.model.MenuCategoryOptions;
 import lombok.experimental.UtilityClass;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @UtilityClass
 public class MenuMapper {
@@ -38,7 +33,7 @@ public class MenuMapper {
                 .name(menu.getName())
                 .price(menu.getPrice())
                 .currency(getCurrency(menu))
-                .tenantCode(menu.getTenantContext().getTenantCode())
+                .tenantCode(menu.getTenant().getCode())
                 .compositions(menu.getMenuCategoryOptions().stream()
                         .map(MenuMapper::toComposition).toList())
                 .build();

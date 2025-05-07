@@ -28,9 +28,6 @@ public class Dish {
     @Column(name = "price", nullable = false)
     private Double price; // Holds the current price
 
-    @Column(name = "image_url")
-    private String imageUrl;
-
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -38,8 +35,8 @@ public class Dish {
     private LocalDateTime updatedAt;
 
     @ManyToOne
-    @JoinColumn(name = "tenant_context_id", nullable = false)
-    private TenantContext tenantContext;  // Link to TenantContext
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL)
     private List<DishProduct> dishProducts;

@@ -25,8 +25,8 @@ public class OrderAudit {
     private Order order;
 
     @ManyToOne
-    @JoinColumn(name = "tenant_context_id", nullable = false)
-    private TenantContext tenantContext;
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @Column(name = "audit_action", nullable = false)
     private String auditAction;

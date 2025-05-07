@@ -3,7 +3,6 @@ package com.bacos.mokengeli.biloko.infrastructure.adapter;
 import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainDish;
 import com.bacos.mokengeli.biloko.application.domain.DomainDishProduct;
-import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainHourlyOrderStat;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.DishMapper;
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
 public class DishAdapter implements DishPort {
 
     private final DishRepository dishRepository;
-    private final TenantContextRepository tenantContextRepository;
+    private final TenantRepository tenantRepository;
     private final DishProductRepository dishProductRepository;
     private final DishCategoryRepository dishCategoryRepository;
     private final InventoryService inventoryService;
@@ -35,9 +34,9 @@ public class DishAdapter implements DishPort {
     private final CurrencyRepository currencyRepository;
 
     @Autowired
-    public DishAdapter(DishRepository dishRepository, TenantContextRepository tenantContextRepository, DishProductRepository dishProductRepository, DishCategoryRepository dishCategoryRepository, InventoryService inventoryService, CategoryRepository categoryRepository, CurrencyRepository currencyRepository) {
+    public DishAdapter(DishRepository dishRepository, TenantRepository tenantRepository, DishProductRepository dishProductRepository, DishCategoryRepository dishCategoryRepository, InventoryService inventoryService, CategoryRepository categoryRepository, CurrencyRepository currencyRepository) {
         this.dishRepository = dishRepository;
-        this.tenantContextRepository = tenantContextRepository;
+        this.tenantRepository = tenantRepository;
         this.dishProductRepository = dishProductRepository;
         this.dishCategoryRepository = dishCategoryRepository;
         this.inventoryService = inventoryService;
@@ -61,9 +60,9 @@ public class DishAdapter implements DishPort {
 
         Dish dish = DishMapper.toEntity(domainDish);
         String tenantCode = domainDish.getTenantCode();
-        TenantContext tenantContext = this.tenantContextRepository.findByTenantCode(tenantCode)
+        Tenant tenant = this.tenantRepository.findByCode(tenantCode)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + tenantCode));
-        dish.setTenantContext(tenantContext);
+        dish.setTenant(tenant);
         dish.setCurrency(currency);
         dish.setCreatedAt(LocalDateTime.now());
         dish = dishRepository.save(dish);
@@ -119,7 +118,7 @@ public class DishAdapter implements DishPort {
     @Override
     public Page<DomainDish> findAllDishesByTenant(String tenantCode, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Dish> pageEntity = dishRepository.findByTenantContextTenantCode(tenantCode, pageable);
+        Page<Dish> pageEntity = dishRepository.findByTenantCode(tenantCode, pageable);
         return pageEntity.map(DishMapper::toDomain);
     }
 
@@ -166,7 +165,7 @@ public class DishAdapter implements DishPort {
     @Override
     public Optional<List<DomainDish>> getDishesByCategory(String tenantCode, Long categoryId) {
         List<Dish> entities = dishRepository
-                .findByTenantContextTenantCodeAndDishCategoriesCategoryId(tenantCode, categoryId);
+                .findByTenantCodeAndDishCategoriesCategoryId(tenantCode, categoryId);
         if (entities.isEmpty()) {
             return Optional.empty();
         }

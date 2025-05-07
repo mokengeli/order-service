@@ -1,13 +1,11 @@
 package com.bacos.mokengeli.biloko.infrastructure.model;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Builder
@@ -15,23 +13,25 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "categories")
-public class Category {
+@Table(name = "tenants")
+public class Tenant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "code", nullable = false, unique = true)
+    private String code;
+
     @Column(name = "name", nullable = false)
     private String name;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    private List<DishCategory> dishCategories;
+    @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL)
+    private List<Dish> dishes;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL)
+    private List<Menu> menus;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
+    @OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL)
+    private List<TenantCategory> categories;
 }

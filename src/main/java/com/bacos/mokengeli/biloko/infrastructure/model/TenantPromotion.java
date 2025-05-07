@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @Entity
-@Table(name = "tenant_promotions")
+@Table(name = "tenants_promotions")
 public class TenantPromotion {
 
     @Id
@@ -17,8 +17,8 @@ public class TenantPromotion {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "tenant_context_id", nullable = false)
-    private TenantContext tenantContext;  // Link to TenantContext
+    @JoinColumn(name = "tenant_id", nullable = false)
+    private Tenant tenant;
 
     @ManyToOne
     @JoinColumn(name = "dish_id")

@@ -14,7 +14,7 @@ import java.util.List;
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
-    @Query("SELECT CASE WHEN COUNT(oi) > 0 THEN true ELSE false END FROM OrderItem oi WHERE oi.id = :id AND oi.order.tenantContext.tenantCode = :tenantCode")
+    @Query("SELECT CASE WHEN COUNT(oi) > 0 THEN true ELSE false END FROM OrderItem oi WHERE oi.id = :id AND oi.order.tenant.code = :tenantCode")
     Boolean isOrderItemOfTenantCode(@Param("id") Long id, @Param("tenantCode") String tenantCode);
 
     @Query("""
@@ -26,7 +26,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
               FROM OrderItem i
               JOIN i.order o
               WHERE o.createdAt BETWEEN :start AND :end
-                AND o.tenantContext.tenantCode = :tenantCode
+                AND o.tenant.code = :tenantCode
                 AND i.state = :servedState
               GROUP BY i.dish.id, i.dish.name
               ORDER BY quantity DESC
@@ -50,7 +50,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             JOIN d.dishCategories dc
             JOIN dc.category c
             WHERE o.createdAt BETWEEN :start AND :end
-              AND o.tenantContext.tenantCode = :tenantCode
+              AND o.tenant.code = :tenantCode
               AND i.state = :servedState
             GROUP BY c.name
             ORDER BY value DESC
@@ -71,7 +71,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
               JOIN i.order o
              WHERE i.state = :servedState
                AND o.createdAt BETWEEN :start AND :end
-               AND o.tenantContext.tenantCode = :tenantCode
+               AND o.tenant.code = :tenantCode
             """)
     long countServedItems(
             @Param("servedState") OrderItemState servedState,
@@ -90,7 +90,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
               JOIN dc.category c
              WHERE i.state = :servedState
                AND o.createdAt BETWEEN :start AND :end
-               AND o.tenantContext.tenantCode = :tenantCode
+               AND o.tenant.code = :tenantCode
              GROUP BY c.name
              ORDER BY value DESC
             """)
@@ -108,7 +108,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
               JOIN i.order o
              WHERE i.state = :servedState
                AND o.createdAt BETWEEN :start AND :end
-               AND o.tenantContext.tenantCode = :tenantCode
+               AND o.tenant.code = :tenantCode
              GROUP BY HOUR(i.createdAt)
              ORDER BY hour
             """)

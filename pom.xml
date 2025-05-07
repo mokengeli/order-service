@@ -23,6 +23,7 @@
         <jjwt-api.version>0.12.3</jjwt-api.version>
         <jjwt-impl.version>0.12.3</jjwt-impl.version>
         <jjwt-jackson.version>0.12.3</jjwt-jackson.version>
+        <spring-cloud-starter-openfeign.version>4.1.3</spring-cloud-starter-openfeign.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -120,8 +121,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-
-
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+            <version>${spring-cloud-starter-openfeign.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

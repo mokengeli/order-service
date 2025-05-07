@@ -9,5 +9,5 @@ import java.util.Optional;
 
 @Repository
 public interface MenuRepository extends JpaRepository<Menu, Long> {
-    Optional<List<Menu>> findByTenantContextTenantCode(String tenantCode);
+    Optional<List<Menu>> findByTenantCode(String tenantCode);
 }

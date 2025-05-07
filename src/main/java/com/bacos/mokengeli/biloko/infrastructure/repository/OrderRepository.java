@@ -15,7 +15,7 @@ import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    @Query("SELECT o, i FROM Order o JOIN o.items i WHERE o.tenantContext.tenantCode = :tenantCode AND i.state = :orderItemState")
+    @Query("SELECT o, i FROM Order o JOIN o.items i WHERE o.tenant.code = :tenantCode AND i.state = :orderItemState")
     List<Object[]> findOrderAndItemsByTenantCodeAndItemState(@Param("tenantCode") String tenantCode,
                                                              @Param("orderItemState") OrderItemState orderItemState);
 
@@ -50,16 +50,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         );
     }
 
-    @Query("SELECT COUNT(o) > 0 FROM Order o WHERE o.id = :orderId AND o.tenantContext.tenantCode = :tenantCode")
+    @Query("SELECT COUNT(o) > 0 FROM Order o WHERE o.id = :orderId AND o.tenant.code = :tenantCode")
     boolean existsByIdAndTenantCode(@Param("orderId") Long orderId, @Param("tenantCode") String tenantCode);
 
-    @Query("SELECT o FROM Order o WHERE o.paymentStatus = :status AND o.tenantContext.tenantCode = :tenantCode")
+    @Query("SELECT o FROM Order o WHERE o.paymentStatus = :status AND o.tenant.code = :tenantCode")
     List<Order> findByPaymentStatusAndTenantCode(
             @Param("status") OrderPaymentStatus status,
             @Param("tenantCode") String tenantCode
     );
 
-    @Query("SELECT o FROM Order o WHERE o.paymentStatus IN :statuses AND o.tenantContext.tenantCode = :tenantCode")
+    @Query("SELECT o FROM Order o WHERE o.paymentStatus IN :statuses AND o.tenant.code = :tenantCode")
     List<Order> findByPaymentStatusInAndTenantCode(
             @Param("statuses") Collection<OrderPaymentStatus> statuses,
             @Param("tenantCode") String tenantCode
@@ -90,8 +90,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT o FROM Order o "
             + "WHERE o.createdAt BETWEEN :start AND :end "
-            + "  AND o.tenantContext.tenantCode = :tenantCode")
-    List<Order> findByCreatedAtBetweenAndTenantContextTenantCode(
+            + "  AND o.tenant.code = :tenantCode")
+    List<Order> findByCreatedAtBetweenAndTenantCode(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end,
             @Param("tenantCode") String tenantCode
@@ -102,7 +102,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                    COUNT(o)              AS orders
               FROM Order o
              WHERE o.createdAt BETWEEN :start AND :end
-               AND o.tenantContext.tenantCode = :tenantCode
+               AND o.tenant.code = :tenantCode
              GROUP BY HOUR(o.createdAt)
              ORDER BY hour
             """)
