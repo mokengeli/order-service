@@ -98,7 +98,7 @@ public class DishService {
         String tenantCode = connectedUser.getTenantCode();
         List<Long> ids = Collections.singletonList(id);
         boolean allDishesOfTenant = this.dishPort.isAllDishesOfTenant(tenantCode, ids);
-        if (!allDishesOfTenant) {
+        if (!this.userAppService.isAdminUser() && !allDishesOfTenant) {
             String errorId = UUID.randomUUID().toString();
             log.error("[{}]: User [{}] of tenant [{}] try to get a dish of different tenant. Here it's the dish ids [{}]", errorId, connectedUser.getEmployeeNumber(),
                     connectedUser.getTenantCode(), ids);
@@ -118,7 +118,7 @@ public class DishService {
         throw new ServiceException(UUID.randomUUID().toString(), "Dish not found");
     }
 
-    public List<DomainDish> getDishesByCategory(Long categroyId)  {
+    public List<DomainDish> getDishesByCategory(Long categroyId) {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
         String tenantCode = connectedUser.getTenantCode();
 
