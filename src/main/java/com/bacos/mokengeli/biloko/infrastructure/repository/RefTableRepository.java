@@ -15,4 +15,11 @@ public interface RefTableRepository extends JpaRepository<RefTable, Long> {
     Page<RefTable> findByTenantCode(String tenantCode, Pageable pageable);
 
     boolean existsByIdAndTenantCode(Long id, String code);
+
+    long countByTenantCode(String tenantCode);
+
+    /**
+     * Récupération conditionnelle par ID et tenantCode.
+     */
+    Optional<RefTable> findByIdAndTenantCode(Long id, String tenantCode);
 }

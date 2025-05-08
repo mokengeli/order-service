@@ -1,7 +1,6 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
 
-import com.bacos.mokengeli.biloko.application.domain.DomainCategory;
 import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.service.RefTableService;
@@ -11,8 +10,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/order/table")
@@ -27,8 +24,8 @@ public class RefTableController {
 
     @GetMapping("")
     public Page<DomainRefTable> getRefTablesByTenantCode(@RequestParam("code") String tenantCode,
-                                                               @RequestParam(name = "page", defaultValue = "0") int page,
-                                                               @RequestParam(name = "size", defaultValue = "10") int size) {
+                                                         @RequestParam(name = "page", defaultValue = "0") int page,
+                                                         @RequestParam(name = "size", defaultValue = "10") int size) {
         try {
             return this.refTableService.getRefTablesByTenantCode(tenantCode, page, size);
         } catch (ServiceException e) {
@@ -43,6 +40,31 @@ public class RefTableController {
             return ResponseEntity.ok(createdRefTable);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> countTablesByTenant(@RequestParam("code") String tenantCode) {
+        try {
+            long count = refTableService.countRefTablesByTenantCode(tenantCode);
+            return ResponseEntity.ok(count);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
+    @GetMapping("/{id}")
+    public DomainRefTable getTableById(
+            @PathVariable("id") Long id,
+            @RequestParam("code") String tenantCode) {
+        try {
+            return refTableService.getRefTableById(id, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
         }
     }
 }
