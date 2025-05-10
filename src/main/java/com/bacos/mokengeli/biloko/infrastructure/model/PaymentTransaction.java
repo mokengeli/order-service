@@ -31,6 +31,8 @@ public class PaymentTransaction {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     @Column(name = "employee_number", nullable = false)
     private String employeeNumber;

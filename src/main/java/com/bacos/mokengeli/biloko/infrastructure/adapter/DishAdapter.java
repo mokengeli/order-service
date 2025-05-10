@@ -145,7 +145,7 @@ public class DishAdapter implements DishPort {
             domainDishProducts.add(DomainDishProduct.builder().productId(product.getId()).productName(product.getName())
                     .unitOfMeasure(product.getUnitOfMeasure())
                     .quantity(quantity)
-                    .removable(true)
+                    .removable(false)
                     .build());
         }));
         domainDish.setDishProducts(domainDishProducts);

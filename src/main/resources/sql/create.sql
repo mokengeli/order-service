@@ -20,8 +20,8 @@ CREATE TABLE ref_tables (
                             id                BIGSERIAL PRIMARY KEY,
                             tenant_id BIGINT    NOT NULL REFERENCES tenants(id),
                             name              VARCHAR(255) NOT NULL,
-                            created_at        TIMESTAMP NOT NULL DEFAULT now(),
-                            updated_at        TIMESTAMP,
+                            created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                            updated_at        TIMESTAMP WITH TIME ZONE,
                             CONSTRAINT unique_name_per_tenant UNIQUE (name, tenant_id)
 );
 
@@ -43,8 +43,8 @@ CREATE TABLE dishes (
                         price             NUMERIC(14,3) NOT NULL,
                         tenant_id BIGINT NOT NULL REFERENCES tenants(id),
                         currency_id       BIGINT NOT NULL REFERENCES currencies(id),
-                        created_at        TIMESTAMP NOT NULL DEFAULT now(),
-                        updated_at        TIMESTAMP,
+                        created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                        updated_at        TIMESTAMP WITH TIME ZONE,
                         CONSTRAINT unique_dish_per_tenant UNIQUE (name, tenant_id)
 );
 
@@ -72,8 +72,8 @@ CREATE TABLE menus (
                        price             NUMERIC(10,2) NOT NULL,
                        currency_id       BIGINT NOT NULL REFERENCES currencies(id),
                        tenant_id BIGINT NOT NULL REFERENCES tenants(id),
-                       created_at        TIMESTAMP NOT NULL DEFAULT now(),
-                       updated_at        TIMESTAMP
+                       created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                       updated_at        TIMESTAMP WITH TIME ZONE
 );
 
 /* =============================================================
@@ -107,8 +107,8 @@ CREATE TABLE dish_price_history (
                                     id        BIGSERIAL PRIMARY KEY,
                                     dish_id   BIGINT NOT NULL REFERENCES dishes(id) ON DELETE CASCADE,
                                     price     NUMERIC(14,3) NOT NULL,
-                                    start_date TIMESTAMP NOT NULL,
-                                    end_date   TIMESTAMP
+                                    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+                                    end_date   TIMESTAMP WITH TIME ZONE
 );
 
 /* Historique récent par plat */
@@ -124,8 +124,8 @@ CREATE TABLE tenants_promotions (
                                    dish_id           BIGINT REFERENCES dishes(id) ON DELETE SET NULL,
                                    menu_id           BIGINT REFERENCES menus(id) ON DELETE SET NULL,
                                    discount_percentage NUMERIC(5,2) NOT NULL,
-                                   start_date        TIMESTAMP NOT NULL,
-                                   end_date          TIMESTAMP NOT NULL,
+                                   start_date        TIMESTAMP WITH TIME ZONE NOT NULL,
+                                   end_date          TIMESTAMP WITH TIME ZONE NOT NULL,
                                    is_active         BOOLEAN DEFAULT TRUE
 );
 
@@ -135,8 +135,8 @@ CREATE TABLE tenants_promotions (
 CREATE TABLE categories (
                             id         BIGSERIAL PRIMARY KEY,
                             name       VARCHAR(255) NOT NULL UNIQUE,
-                            created_at TIMESTAMP NOT NULL DEFAULT now(),
-                            updated_at TIMESTAMP
+                            created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                            updated_at TIMESTAMP WITH TIME ZONE
 );
 
 /* =============================================================
@@ -176,8 +176,8 @@ CREATE TABLE orders (
                         currency_id       BIGINT NOT NULL REFERENCES currencies(id),
                         payment_status    VARCHAR(50)  NOT NULL DEFAULT 'UNPAID',
                         paid_amount       NUMERIC(14,3) NOT NULL DEFAULT 0.0,
-                        created_at        TIMESTAMP NOT NULL DEFAULT now(),
-                        updated_at        TIMESTAMP
+                        created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                        updated_at        TIMESTAMP WITH TIME ZONE
 );
 
 /* Index existants + nouveaux pour reporting */
@@ -204,8 +204,8 @@ CREATE TABLE order_items (
                              order_id    BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
                              dish_id     BIGINT REFERENCES dishes(id),
                              currency_id BIGINT NOT NULL REFERENCES currencies(id),
-                             created_at        TIMESTAMP NOT NULL DEFAULT now(),
-                             updated_at        TIMESTAMP
+                             created_at        TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                             updated_at        TIMESTAMP WITH TIME ZONE
 );
 
 /* Agrégats dashboard & filtrage par état */
@@ -223,31 +223,15 @@ CREATE TABLE payment_transactions (
                                       order_id        BIGINT NOT NULL REFERENCES orders(id),
                                       amount          NUMERIC(14,3) NOT NULL,
                                       payment_method  VARCHAR(50) NOT NULL,
-                                      created_at      TIMESTAMP NOT NULL DEFAULT now(),
                                       employee_number VARCHAR(50) NOT NULL,
                                       notes           TEXT,
                                       is_refund       BOOLEAN NOT NULL DEFAULT false,
-                                      discount_amount NUMERIC(14,3) NOT NULL DEFAULT 0.0
+                                      discount_amount NUMERIC(14,3) NOT NULL DEFAULT 0.0,
+                                      created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+                                      updated_at        TIMESTAMP WITH TIME ZONE
 );
 
 /* Historique de paiement d’une commande */
 CREATE INDEX IF NOT EXISTS idx_payment_transactions_order_id
     ON payment_transactions (order_id, created_at DESC);
 
-/* =============================================================
-   ORDERS_AUDIT
-   =============================================================*/
-CREATE TABLE orders_audit (
-                              id               BIGSERIAL PRIMARY KEY,
-                              audit_action     VARCHAR(50) NOT NULL,  -- CREATED / UPDATED / DELETED
-                              old_state        VARCHAR(50),
-                              new_state        VARCHAR(50),
-                              change_timestamp TIMESTAMP NOT NULL DEFAULT now(),
-                              order_id         BIGINT NOT NULL REFERENCES orders(id),
-                              tenant_id BIGINT NOT NULL REFERENCES tenants(id),
-                              changed_by       VARCHAR(255) NOT NULL      -- employee_number
-);
-
-/* Historique d’un order */
-CREATE INDEX IF NOT EXISTS idx_audit_order_id
-    ON orders_audit (order_id, change_timestamp DESC);

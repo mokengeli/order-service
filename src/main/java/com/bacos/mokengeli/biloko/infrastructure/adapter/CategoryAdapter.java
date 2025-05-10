@@ -1,15 +1,18 @@
 package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
 import com.bacos.mokengeli.biloko.application.domain.DomainCategory;
+import com.bacos.mokengeli.biloko.application.domain.DomainTenant;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.CategoryPort;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.CategoryMapper;
+import com.bacos.mokengeli.biloko.infrastructure.mapper.TenantMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.Category;
 import com.bacos.mokengeli.biloko.infrastructure.model.Tenant;
 import com.bacos.mokengeli.biloko.infrastructure.model.TenantCategory;
 import com.bacos.mokengeli.biloko.infrastructure.repository.CategoryRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.TenantCategoryRepository;
 import com.bacos.mokengeli.biloko.infrastructure.repository.TenantRepository;
+import com.bacos.mokengeli.biloko.infrastructure.repository.proxy.UserProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,13 +28,15 @@ public class CategoryAdapter implements CategoryPort {
     private final CategoryRepository categoryRepository;
     private final TenantCategoryRepository tenantCategoryRepository;
     private final TenantRepository tenantRepository;
+    private final UserProxy userProxy;
 
     @Autowired
     public CategoryAdapter(CategoryRepository categoryRepository,
-                           TenantCategoryRepository tenantCategoryRepository, TenantRepository tenantRepository) {
+                           TenantCategoryRepository tenantCategoryRepository, TenantRepository tenantRepository, UserProxy userProxy) {
         this.categoryRepository = categoryRepository;
         this.tenantCategoryRepository = tenantCategoryRepository;
         this.tenantRepository = tenantRepository;
+        this.userProxy = userProxy;
     }
 
     @Override
@@ -60,10 +65,16 @@ public class CategoryAdapter implements CategoryPort {
 
     @Override
     public void assiginToTenant(Long categoryId, String tenantCode) throws ServiceException {
+        Optional<Tenant> optTenant = this.tenantRepository.findByCode(tenantCode);
+        Tenant tenant = optTenant.orElse(null);
+        if (tenant == null) {
+            DomainTenant domainTenant = this.userProxy.getTenantByCode(tenantCode)
+                    .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                            "No tenant found with code " + tenantCode));
+            tenant = TenantMapper.toEntity(domainTenant);
+            tenant = this.tenantRepository.save(tenant);
 
-        Tenant tenant = this.tenantRepository.findByCode(tenantCode)
-                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
-                        "No tenant found with the code " + tenantCode));
+        }
         Category category = this.categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                         "No category found with the name " + categoryId));
