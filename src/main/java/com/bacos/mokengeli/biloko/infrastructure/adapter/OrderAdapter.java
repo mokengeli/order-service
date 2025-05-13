@@ -54,8 +54,17 @@ public class OrderAdapter implements OrderPort {
     @Transactional
     @Override
     public Optional<DomainOrder> createOrder(CreateOrder createOrder) throws ServiceException {
-        Tenant tenant = this.tenantRepository.findByCode(createOrder.getTenantCode())
-                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + createOrder.getTenantCode()));
+        String tenantCode = createOrder.getTenantCode();
+        Optional<Tenant> optTenant = this.tenantRepository.findByCode(tenantCode);
+        Tenant tenant = optTenant.orElse(null);
+        if (tenant == null) {
+            DomainTenant domainTenant = this.userProxy.getTenantByCode(tenantCode)
+                    .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                            "No tenant found with code " + tenantCode));
+            tenant = TenantMapper.toEntity(domainTenant);
+            tenant = this.tenantRepository.save(tenant);
+
+        }
         Currency currency = this.currencyRepository.findById(createOrder.getCurrencyId())
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No currency found with id " + createOrder.getCurrencyId()));
         RefTable refTable = this.refTableRepository.findById(createOrder.getTableId())
@@ -79,8 +88,13 @@ public class OrderAdapter implements OrderPort {
     @Override
     public Optional<List<DomainOrder>> getOrdersByState(OrderItemState orderItemState, String tenantCode) throws ServiceException {
         boolean existsByTenantCode = this.tenantRepository.existsByCode(tenantCode);
+
         if (!existsByTenantCode) {
-            throw new ServiceException(UUID.randomUUID().toString(), "No tenant  find with tenant_code=" + tenantCode);
+            DomainTenant domainTenant = this.userProxy.getTenantByCode(tenantCode)
+                    .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                            "No tenant  find with tenant_code=" + tenantCode));
+            Tenant tenant = TenantMapper.toEntity(domainTenant);
+            this.tenantRepository.save(tenant);
         }
 
 

@@ -5,7 +5,7 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/mokengeli_db
+    url: jdbc:postgresql://localhost:5432/mokengeli_biloko_db
     username: user1
     password: password
     driver-class-name: org.postgresql.Driver
@@ -44,4 +44,8 @@ management:
     web:
       exposure:
         include: health,info,metrics, websocket,loggers
+user:
+  service-id: user-service
+inventory:
+  service-id: inventory-service
 

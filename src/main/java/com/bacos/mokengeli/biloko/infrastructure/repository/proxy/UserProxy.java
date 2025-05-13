@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Optional;
 
 
-@FeignClient(name = "user-service",
+@FeignClient(name = "${user.service-id}",
         configuration = com.bacos.mokengeli.biloko.config.feign.FeignClientConfig.class)
 public interface UserProxy {
     @GetMapping("/api/user/tenant")
