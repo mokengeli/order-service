@@ -10,11 +10,11 @@ import java.util.Map;
 
 @Component
 @Endpoint(id = "websocket")
-public class WebSocketActuatorEndpoint {
+public class WebSocketEndpoint {
 
     private final SimpUserRegistry userRegistry;
 
-    public WebSocketActuatorEndpoint(SimpUserRegistry userRegistry) {
+    public WebSocketEndpoint(SimpUserRegistry userRegistry) {
         this.userRegistry = userRegistry;
     }
 

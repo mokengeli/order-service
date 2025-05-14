@@ -43,7 +43,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics, websocket,loggers
+        include: health,info,metrics, websocket
 user:
   service-id: user-service
 inventory:
