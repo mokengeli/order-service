@@ -44,13 +44,15 @@ ENV SERVER_PORT="" \
 
 # Variables d'environnement OPTIONNELLES
 ENV TIME_ZONE="GMT+01:00" \
+    SPRING_PROFILES_ACTIVE="dev" \
     POSTGRES_SCHEMA="order_schema" \
     USER_SERVICE_ID="user-service" \
     INVENTORY_SERVICE_ID="inventory-service" \
     ACTUATOR_ENDPOINTS="health,info,metrics,websocket,loggers"
 
 # Point d'entrée
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=file:./config/"]
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=${SPRING_PROFILES_ACTIVE}",\
+            "--spring.config.location=file:./config/"]
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
