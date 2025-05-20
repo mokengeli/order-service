@@ -11,6 +11,11 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       schema: ${POSTGRES_SCHEMA:order_schema}
+      maximum-pool-size: 4     # ou moins, selon ton trafic
+      minimum-idle: 2
+      connection-timeout: 20000  # 20 s
+      idle-timeout: 300000       # 5 min
+      max-lifetime: 1800000      # 30 min
   jpa:
     properties:
       hibernate:
