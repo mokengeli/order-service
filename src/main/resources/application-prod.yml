@@ -10,14 +10,15 @@ spring:
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      schema: ${POSTGRES_SCHEMA:order_schema}
-      maximum-pool-size: 2
-      minimum-idle: 1
-      idle-timeout: 180000       # 3 minutes
-      connection-timeout: 30000
+      maximum-pool-size: ${HIKARI-MAX-POOL-SIZE}
+      minimum-idle: ${HIKARI-MIN-IDLE}
+      idle-timeout: ${HIKARI-IDLE-TIMEOUT}
+      connection-timeout: ${HIKARI-CONNECTION-TIMEOUT}
+      max-lifetime: ${HIKARI-MAX-LIFETIME}
   jpa:
     properties:
       hibernate:
+        default_schema: ${POSTGRES_SCHEMA:order_schema}
         jdbc:
           time_zone: ${TIME_ZONE:GMT+01:00}
   jackson:
