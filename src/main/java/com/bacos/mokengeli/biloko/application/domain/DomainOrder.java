@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ public class DomainOrder {
     private List<DomainOrderItem> items;
     private double totalPrice;
     private DomainCurrency currency;
-    private LocalDateTime orderDate;
+    private OffsetDateTime orderDate;
     private OrderPaymentStatus paymentStatus;
     private double paidAmount;
     private double remainingAmount;
@@ -35,7 +36,7 @@ public class DomainOrder {
         private int count;
         private OrderItemState state;
         private Double unitPrice;
-        private LocalDateTime orderItemDate;
+        private OffsetDateTime orderItemDate;
         private List<String> categories;
 
     }
@@ -45,7 +46,7 @@ public class DomainOrder {
         private Long id;
         private double amount;
         private String paymentMethod;
-        private LocalDateTime createdAt;
+        private OffsetDateTime createdAt;
         private String employeeNumber;
         private String notes;
         private boolean isRefund;

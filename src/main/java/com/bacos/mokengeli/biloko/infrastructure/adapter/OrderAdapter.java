@@ -21,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -77,7 +78,7 @@ public class OrderAdapter implements OrderPort {
                 .paidAmount(0.0)
                 .paymentStatus(OrderPaymentStatus.UNPAID)
                 .tenant(tenant)
-                .createdAt(LocalDateTime.now())
+                .createdAt(OffsetDateTime.now())
                 .build();
         createAndSetOrderItems(order, currency, createOrder.getOrderItems());
         order = this.orderRepository.save(order);
@@ -277,7 +278,7 @@ public class OrderAdapter implements OrderPort {
                         .state(OrderItemState.PENDING)
                         .note(orderItem.getNote() == null ? "" : orderItem.getNote())
                         .currency(currency)
-                        .createdAt(LocalDateTime.now())
+                        .createdAt(OffsetDateTime.now())
                         .dish(dish)
                         .order(order)
                         .unitPrice(dish.getPrice())
@@ -304,14 +305,14 @@ public class OrderAdapter implements OrderPort {
                 .paymentMethod(paymentMethod)
                 .employeeNumber(employeeNumber)
                 .notes(notes)
-                .createdAt(LocalDateTime.now())
+                .createdAt(OffsetDateTime.now())
                 .isRefund(false)
                 .discountAmount(discountAmount != null ? discountAmount : 0.0)
                 .build();
 
         // Ajouter le paiement à la commande
         order.addPayment(payment);
-        order.setUpdatedAt(LocalDateTime.now());
+        order.setUpdatedAt(OffsetDateTime.now());
 
         // Sauvegarder la commande mise à jour
         Order savedOrder = orderRepository.save(order);
@@ -344,14 +345,14 @@ public class OrderAdapter implements OrderPort {
                 .paymentMethod(payment.getPaymentMethod())
                 .employeeNumber(employeeNumber)
                 .notes("Refund for payment #" + paymentId + ": " + reason)
-                .createdAt(LocalDateTime.now())
+                .createdAt(OffsetDateTime.now())
                 .isRefund(true)
                 .discountAmount(0.0)
                 .build();
 
         // Ajouter le remboursement à la commande
         order.addPayment(refund);
-        order.setUpdatedAt(LocalDateTime.now());
+        order.setUpdatedAt(OffsetDateTime.now());
 
         // Sauvegarder la commande mise à jour
         Order savedOrder = orderRepository.save(order);

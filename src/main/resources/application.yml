@@ -10,12 +10,17 @@ spring:
     password: password
     driver-class-name: org.postgresql.Driver
     hikari:
-      schema: order_schema  # Specify the schema here
+      maximum-pool-size: 2
+      minimum-idle: 1
+      idle-timeout: 180000       # 3 minutes
+      connection-timeout: 30000
   jpa:
     properties:
       hibernate:
+        default_schema: order_schema
         jdbc:
           time_zone: GMT+01:00
+
   jackson:
     time-zone: GMT+01:00
 
@@ -48,4 +53,7 @@ user:
   service-id: user-service
 inventory:
   service-id: inventory-service
+logging:
+  level:
+    com.zaxxer.hikari: DEBUG
 

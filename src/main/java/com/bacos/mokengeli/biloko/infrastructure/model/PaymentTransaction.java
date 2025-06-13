@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Data
 @NoArgsConstructor
@@ -30,9 +31,9 @@ public class PaymentTransaction {
     private String paymentMethod;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private OffsetDateTime createdAt;
+    @Column(name = "updated_at")
+    private OffsetDateTime updatedAt;
 
     @Column(name = "employee_number", nullable = false)
     private String employeeNumber;
