@@ -20,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 @Component
@@ -50,7 +51,7 @@ public class CategoryAdapter implements CategoryPort {
     @Override
     public DomainCategory addCategory(DomainCategory category) {
         Category entity = CategoryMapper.toEntity(category);
-        entity.setCreatedAt(LocalDateTime.now());
+        entity.setCreatedAt(OffsetDateTime.now());
         Category savedCategory = categoryRepository.save(entity);
         return CategoryMapper.toDomain(savedCategory);
     }

@@ -213,7 +213,7 @@ public class OrderAdapter implements OrderPort {
         }
 
         RefTable refT = RefTableMapper.toEntity(refTable);
-        refT.setCreatedAt(LocalDateTime.now());
+        refT.setCreatedAt(OffsetDateTime.now());
         refT.setTenant(tenant);
         RefTable save = this.refTableRepository.save(refT);
         return RefTableMapper.toDomain(save);

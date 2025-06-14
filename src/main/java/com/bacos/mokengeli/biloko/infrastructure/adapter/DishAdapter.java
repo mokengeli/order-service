@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -77,7 +78,7 @@ public class DishAdapter implements DishPort {
         }
         dish.setTenant(tenant);
         dish.setCurrency(currency);
-        dish.setCreatedAt(LocalDateTime.now());
+        dish.setCreatedAt(OffsetDateTime.now());
         dish = dishRepository.save(dish);
 
         List<DishProduct> dishProducts = createDishProducts(domainDish.getDishProducts(), dish);

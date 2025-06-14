@@ -4,6 +4,7 @@ import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.dashboard.*;
 import com.bacos.mokengeli.biloko.application.port.DashboardPort;
+import com.bacos.mokengeli.biloko.application.utils.DateUtils;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.OrderMapper;
 import com.bacos.mokengeli.biloko.infrastructure.model.Order;
 import com.bacos.mokengeli.biloko.infrastructure.repository.OrderItemRepository;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,8 +34,8 @@ public class DashboardAdapter implements DashboardPort {
 
     @Override
     public List<DomainOrder> getOrdersBetweenDates(LocalDate startDate, LocalDate endDate, String tenantCode) {
-        LocalDateTime start = startDate.atStartOfDay();
-        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+        OffsetDateTime start = DateUtils.startOfDay(startDate);
+        OffsetDateTime end = DateUtils.endOfDay(endDate);
         List<Order> orders = orderRepository
                 .findByCreatedAtBetweenAndTenantCode(start, end, tenantCode);
         return orders.stream()
@@ -48,8 +50,8 @@ public class DashboardAdapter implements DashboardPort {
             String tenantCode,
             int limit
     ) {
-        LocalDateTime start = startDate.atStartOfDay();
-        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+        OffsetDateTime start = DateUtils.startOfDay(startDate);
+        OffsetDateTime end = DateUtils.endOfDay(endDate);
         // Pageable pour limiter au "limit" le nombre de résultats
         return orderItemRepository.findTopDishesServedProjection(
                         OrderItemState.SERVED, start, end, tenantCode, PageRequest.of(0, limit)
@@ -69,8 +71,8 @@ public class DashboardAdapter implements DashboardPort {
             LocalDate endDate,
             String tenantCode
     ) {
-        LocalDateTime start = startDate.atStartOfDay();
-        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+        OffsetDateTime start = DateUtils.startOfDay(startDate);
+        OffsetDateTime end = DateUtils.endOfDay(endDate);
 
         return orderItemRepository.findBreakdownByCategory(
                         start, end, tenantCode, OrderItemState.SERVED
@@ -89,8 +91,8 @@ public class DashboardAdapter implements DashboardPort {
             LocalDate endDate,
             String tenantCode
     ) {
-        LocalDateTime start = startDate.atStartOfDay();
-        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+        OffsetDateTime start = DateUtils.startOfDay(startDate);
+        OffsetDateTime end = DateUtils.endOfDay(endDate);
 
         long total = orderItemRepository.countServedItems(
                 OrderItemState.SERVED, start, end, tenantCode
@@ -122,8 +124,8 @@ public class DashboardAdapter implements DashboardPort {
             LocalDate date,
             String tenantCode
     ) {
-        LocalDateTime start = date.atStartOfDay();
-        LocalDateTime end = date.atTime(LocalTime.MAX);
+        OffsetDateTime start = DateUtils.startOfDay(date);
+        OffsetDateTime end = DateUtils.endOfDay(date);
 
         return orderRepository.findOrdersPerHour(start, end, tenantCode)
                 .stream()

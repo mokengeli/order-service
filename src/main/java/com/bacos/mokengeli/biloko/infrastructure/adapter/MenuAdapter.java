@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -58,7 +59,7 @@ public class MenuAdapter implements MenuPort {
         menu.setTenant(tenant);
 
         // Set creation date
-        menu.setCreatedAt(LocalDateTime.now());
+        menu.setCreatedAt(OffsetDateTime.now());
 
         // Save Menu to retrieve generated ID
         menu = this.menuRepository.save(menu);

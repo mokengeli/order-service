@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -33,8 +33,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             """)
     List<TopDishProjection> findTopDishesServedProjection(
             @Param("servedState") OrderItemState servedState,
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode,
             Pageable pageable
     );
@@ -56,8 +56,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             ORDER BY value DESC
             """)
     List<CategoryBreakdownProjection> findBreakdownByCategory(
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode,
             @Param("servedState") OrderItemState servedState
     );
@@ -75,8 +75,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             """)
     long countServedItems(
             @Param("servedState") OrderItemState servedState,
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode
     );
 
@@ -96,8 +96,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             """)
     List<CategoryStatProjection> findDishesPerCategory(
             @Param("servedState") OrderItemState servedState,
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode
     );
 
@@ -114,8 +114,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             """)
     List<HourStatProjection> findDishesPerHour(
             @Param("servedState") OrderItemState servedState,
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode
     );
 
