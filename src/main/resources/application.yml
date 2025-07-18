@@ -55,5 +55,5 @@ inventory:
   service-id: inventory-service
 logging:
   level:
-    com.zaxxer.hikari: DEBUG
+    com.zaxxer.hikari: INFO
 
