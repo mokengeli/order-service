@@ -30,19 +30,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http.csrf(
-                csrf -> csrf.disable()
-                )  // Désactivation de la protection CSRF, car on utilise JWT
-                //.cors(cors -> cors.disable())
+        return http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers( "/public/**").permitAll()  // Routes publiques
+                        .requestMatchers("/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/actuator/info", "/actuator/health","/actuator/metrics/**", "/actuator/websocket").permitAll()
-                        .anyRequest().authenticated()  // Toutes les autres routes nécessitent une authentification
+                        .requestMatchers("/actuator/info", "/actuator/health", "/actuator/metrics/**", "/actuator/websocket").permitAll()
+
+                        // ✅ AJOUTER: Autoriser les WebSockets (handshake HTTP)
+                        .requestMatchers("/api/order/ws/**").permitAll()
+
+                        .anyRequest().authenticated()
                 )
-                //.cors(cors -> cors.configurationSource(corsConfigurationSource()))  // CORS configuration
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))  // Pas de sessions, JWT uniquement
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)  // Ajouter le filtre JWT
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
