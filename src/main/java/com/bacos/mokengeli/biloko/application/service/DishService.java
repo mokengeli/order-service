@@ -80,7 +80,7 @@ public class DishService {
 
     }
 
-    public Page<DomainDish> getAllDishes(String tenantCode, int page, int size) throws ServiceException {
+    public Page<DomainDish> getAllDishes(String tenantCode, int page, int size, String search) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
         if (!this.userAppService.isAdminUser() &&
                 !connectedUser.getTenantCode().equals(tenantCode)) {
@@ -90,7 +90,7 @@ public class DishService {
                     connectedUser.getTenantCode(), tenantCode);
             throw new ServiceException(uuid, "You don't have permission to get dishes");
         }
-        return dishPort.findAllDishesByTenant(tenantCode, page, size);
+        return dishPort.findAllDishesByTenant(tenantCode, page, size, search);
     }
 
     public DomainDish getDish(Long id) throws ServiceException {

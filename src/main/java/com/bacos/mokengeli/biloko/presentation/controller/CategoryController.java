@@ -27,27 +27,42 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<Page<DomainCategory>> getAllCategories(
             @RequestParam("code") String tenantCode,
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "10") int size) {
+            @RequestParam(name = "page",   defaultValue = "0")  int    page,
+            @RequestParam(name = "size",   defaultValue = "10") int    size,
+            @RequestParam(name = "search", required = false)    String search
+    ) {
         try {
-            Page<DomainCategory> categories = categoryService.getAllCategories(tenantCode, page, size);
+            Page<DomainCategory> categories =
+                    categoryService.getAllCategories(tenantCode, page, size, search);
             return ResponseEntity.ok(categories);
         } catch (ServiceException e) {
-            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST,
+                    e.getMessage(),
+                    e.getTechnicalId()
+            );
         }
     }
 
     @GetMapping("/all")
     public ResponseEntity<Page<DomainCategory>> getAllCategories(
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "10") int size) {
+            @RequestParam(name = "page",   defaultValue = "0")  int    page,
+            @RequestParam(name = "size",   defaultValue = "10") int    size,
+            @RequestParam(name = "search", required = false)    String search  // ← ajouté
+    ) {
         try {
-            Page<DomainCategory> categories = categoryService.getAllCategories(page, size);
+            Page<DomainCategory> categories =
+                    categoryService.getAllCategories(page, size, search);
             return ResponseEntity.ok(categories);
         } catch (ServiceException e) {
-            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST,
+                    e.getMessage(),
+                    e.getTechnicalId()
+            );
         }
     }
+
 
     @PostMapping("/assign")
     public void assignCategoryToTenant(@RequestBody AssignCategoryToTenantRequest

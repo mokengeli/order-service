@@ -130,10 +130,18 @@ public class DishAdapter implements DishPort {
     }
 
     @Override
-    public Page<DomainDish> findAllDishesByTenant(String tenantCode, int page, int size) {
+    public Page<DomainDish> findAllDishesByTenant(String tenantCode, int page, int size, String search) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Dish> pageEntity = dishRepository.findByTenantCode(tenantCode, pageable);
-        return pageEntity.map(DishMapper::toDomain);
+
+        Page<Dish> result;
+        if (search == null || search.trim().isEmpty()) {
+            result = dishRepository.findByTenantCode(tenantCode, pageable);
+        } else {
+            result = dishRepository.findByTenantCodeAndNameContainingIgnoreCase(
+                    tenantCode, search, pageable);
+        }
+
+        return result.map(DishMapper::toDomain);
     }
 
     @Override

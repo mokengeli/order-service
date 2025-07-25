@@ -56,9 +56,10 @@ public class DishController {
     public ResponseEntity<Page<DomainDish>> getAllDishes(
             @RequestParam("code") String tenantCode,
             @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "search", required = false) String search) {
         try {
-            Page<DomainDish> dishes = dishService.getAllDishes(tenantCode, page, size);
+            Page<DomainDish> dishes = dishService.getAllDishes(tenantCode, page, size, search);
             return ResponseEntity.ok(dishes);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(

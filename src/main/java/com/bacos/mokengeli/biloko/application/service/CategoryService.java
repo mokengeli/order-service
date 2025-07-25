@@ -26,19 +26,22 @@ public class CategoryService {
         this.userAppService = userAppService;
     }
 
-    public Page<DomainCategory> getAllCategories(String tenantCode, int page, int size) throws ServiceException {
+    public Page<DomainCategory> getAllCategories(
+            String tenantCode,
+            int    page,
+            int    size,
+            String search
+    ) throws ServiceException {
         ConnectedUser connectedUser = this.userAppService.getConnectedUser();
         if (!this.userAppService.isAdminUser() &&
                 !connectedUser.getTenantCode().equals(tenantCode)) {
             String uuid = UUID.randomUUID().toString();
-            log.error("[{}]: User [{}] Tenant [{}] try to get categories of another tenant: {}", uuid,
-                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
-
+            log.error("[{}]: User [{}] Tenant [{}] tried to search categories of another tenant: {}",
+                    uuid, connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
             throw new ServiceException(uuid, "You don't have permission to get Categories");
         }
         try {
-            return categoryPort.getAllCategoriesOfTenant(tenantCode, page, size);
-
+            return categoryPort.getAllCategoriesOfTenant(tenantCode, page, size, search);
         } catch (ServiceException e) {
             log.error("[{}]: User [{}]. message: {}", e.getTechnicalId(),
                     connectedUser.getEmployeeNumber(), e.getMessage());
@@ -46,8 +49,8 @@ public class CategoryService {
         }
     }
 
-    public Page<DomainCategory> getAllCategories(int page, int size) throws ServiceException {
-        return categoryPort.getAllCategories(page, size);
+    public Page<DomainCategory> getAllCategories(int page, int size,  String search ) throws ServiceException {
+        return categoryPort.getAllCategories(page, size, search);
     }
 
 

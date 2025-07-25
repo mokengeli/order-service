@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface DishPort {
     DomainDish createDish(DomainDish dish) throws ServiceException;
-    Page<DomainDish> findAllDishesByTenant(String tenantCode, int page, int size) throws ServiceException;
+    Page<DomainDish> findAllDishesByTenant(String tenantCode, int page, int size, String search) throws ServiceException;
     boolean isAllDishesOfTenant(String tenantCode, List<Long> dishIds);
     Optional<DomainDish> getDish(Long id) throws ServiceException;
     Double getDishPrice(Long dishId);

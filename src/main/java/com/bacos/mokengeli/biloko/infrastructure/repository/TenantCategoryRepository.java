@@ -8,4 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TenantCategoryRepository extends JpaRepository<TenantCategory, Long> {
     Page<TenantCategory> findByTenantCode(String tenantCode, Pageable pageable);
 
+    Page<TenantCategory> findByTenantCodeAndCategoryNameContainingIgnoreCase(String tenantCode, String search, Pageable pageable);
 }

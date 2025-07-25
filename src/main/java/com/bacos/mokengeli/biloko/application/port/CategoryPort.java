@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Set;
 
 public interface CategoryPort {
-    Page<DomainCategory> getAllCategoriesOfTenant(String tenantCode, int page, int size) throws ServiceException;
+    Page<DomainCategory> getAllCategoriesOfTenant(String tenantCode, int page, int size,  String search) throws ServiceException;
     DomainCategory addCategory(DomainCategory category);
 
-    Page<DomainCategory> getAllCategories(int page, int size) throws ServiceException;
+    Page<DomainCategory> getAllCategories(int page, int size, String search) throws ServiceException;
     void assiginToTenant(Long categoryId, String tenantCode) throws ServiceException;
 }

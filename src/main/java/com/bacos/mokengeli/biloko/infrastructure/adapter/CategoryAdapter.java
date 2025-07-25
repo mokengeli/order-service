@@ -41,11 +41,25 @@ public class CategoryAdapter implements CategoryPort {
     }
 
     @Override
-    public Page<DomainCategory> getAllCategoriesOfTenant(String tenantCode, int page, int size) throws ServiceException {
+    public Page<DomainCategory> getAllCategoriesOfTenant(
+            String tenantCode,
+            int    page,
+            int    size,
+            String search
+    ) throws ServiceException {
         Pageable pageable = PageRequest.of(page, size);
-        return tenantCategoryRepository
-                .findByTenantCode(tenantCode, pageable)
-                .map(tcCat -> CategoryMapper.toDomain(tcCat.getCategory()));
+        Page<TenantCategory> pageResult;
+
+        if (search == null || search.trim().isEmpty()) {
+            pageResult = tenantCategoryRepository.findByTenantCode(tenantCode, pageable);
+        } else {
+            pageResult = tenantCategoryRepository
+                    .findByTenantCodeAndCategoryNameContainingIgnoreCase(
+                            tenantCode, search, pageable
+                    );
+        }
+
+        return pageResult.map(tc -> CategoryMapper.toDomain(tc.getCategory()));
     }
 
     @Override
@@ -57,11 +71,17 @@ public class CategoryAdapter implements CategoryPort {
     }
 
     @Override
-    public Page<DomainCategory> getAllCategories(int page, int size) {
+    public Page<DomainCategory> getAllCategories(int page, int size, String search) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Category> all = categoryRepository.findAll(pageable);
-        return all
-                .map(CategoryMapper::toDomain);
+
+        Page<Category> pageResult;
+        if (search == null || search.trim().isEmpty()) {
+            pageResult = categoryRepository.findAll(pageable);
+        } else {
+            pageResult = categoryRepository.findByNameContainingIgnoreCase(search, pageable);
+        }
+
+        return pageResult.map(CategoryMapper::toDomain);
     }
 
     @Override
