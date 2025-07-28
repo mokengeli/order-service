@@ -27,12 +27,12 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
               JOIN i.order o
               WHERE o.createdAt BETWEEN :start AND :end
                 AND o.tenant.code = :tenantCode
-                AND i.state = :servedState
+                AND i.state IN :dishesState
               GROUP BY i.dish.id, i.dish.name
               ORDER BY quantity DESC
             """)
     List<TopDishProjection> findTopDishesServedProjection(
-            @Param("servedState") OrderItemState servedState,
+            @Param("dishesState") List<OrderItemState> dishesState,
             @Param("start") OffsetDateTime start,
             @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode,
@@ -51,7 +51,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             JOIN dc.category c
             WHERE o.createdAt BETWEEN :start AND :end
               AND o.tenant.code = :tenantCode
-              AND i.state = :servedState
+              AND i.state IN :dishesState
             GROUP BY c.name
             ORDER BY value DESC
             """)
@@ -59,7 +59,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             @Param("start") OffsetDateTime start,
             @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode,
-            @Param("servedState") OrderItemState servedState
+            @Param("dishesState") List<OrderItemState> dishesState
     );
 
     /**

@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,9 +53,10 @@ public class DashboardAdapter implements DashboardPort {
     ) {
         OffsetDateTime start = DateUtils.startOfDay(startDate);
         OffsetDateTime end = DateUtils.endOfDay(endDate);
+        List<OrderItemState> orderItemStates = Arrays.asList(OrderItemState.SERVED, OrderItemState.PAID);
         // Pageable pour limiter au "limit" le nombre de résultats
         return orderItemRepository.findTopDishesServedProjection(
-                        OrderItemState.SERVED, start, end, tenantCode, PageRequest.of(0, limit)
+                        orderItemStates, start, end, tenantCode, PageRequest.of(0, limit)
                 ).stream()
                 .map(p -> new DomainTopDish(
                         p.getDishId(),
@@ -73,9 +75,10 @@ public class DashboardAdapter implements DashboardPort {
     ) {
         OffsetDateTime start = DateUtils.startOfDay(startDate);
         OffsetDateTime end = DateUtils.endOfDay(endDate);
+        List<OrderItemState> orderItemStates = Arrays.asList(OrderItemState.SERVED, OrderItemState.PAID);
 
         return orderItemRepository.findBreakdownByCategory(
-                        start, end, tenantCode, OrderItemState.SERVED
+                        start, end, tenantCode, orderItemStates
                 ).stream()
                 .map(p -> new DomainCategoryBreakdown(
                         p.getCategoryName(),
