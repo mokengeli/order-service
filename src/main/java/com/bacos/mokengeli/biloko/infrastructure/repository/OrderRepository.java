@@ -97,13 +97,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("tenantCode") String tenantCode
     );
 
+    // TODO: integrate timezone before using this
     @Query("""
             SELECT HOUR(o.createdAt)    AS hour,
                    COUNT(o)              AS orders
               FROM Order o
              WHERE o.createdAt BETWEEN :start AND :end
                AND o.tenant.code = :tenantCode
-             GROUP BY HOUR(o.createdAt)
+             GROUP BY HOUR(o.createdAt) 
              ORDER BY hour
             """)
     List<HourlyOrderProjection> findOrdersPerHour(
@@ -111,6 +112,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode
     );
+
+    List<Order> findAllByCreatedAtBetweenAndTenantCode(OffsetDateTime start, OffsetDateTime end, String tenantCode);
 
     interface HourlyOrderProjection {
         Integer getHour();

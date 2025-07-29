@@ -19,10 +19,10 @@ spring:
       hibernate:
         default_schema: order_schema
         jdbc:
-          time_zone: GMT+01:00
+          time_zone: Europe/Paris
 
   jackson:
-    time-zone: GMT+01:00
+    time-zone: Europe/Paris
 
 
 security:

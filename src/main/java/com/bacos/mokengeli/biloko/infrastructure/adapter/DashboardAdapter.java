@@ -13,19 +13,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Component
 public class DashboardAdapter implements DashboardPort {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ZoneId systemZone = ZoneId.systemDefault();
 
     @Autowired
     public DashboardAdapter(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
@@ -130,12 +131,28 @@ public class DashboardAdapter implements DashboardPort {
         OffsetDateTime start = DateUtils.startOfDay(date);
         OffsetDateTime end = DateUtils.endOfDay(date);
 
-        return orderRepository.findOrdersPerHour(start, end, tenantCode)
-                .stream()
-                .map(p -> new DomainHourlyOrderStat(
-                        p.getHour(),
-                        p.getOrders()
+        List<Order> orders = orderRepository
+                    .findAllByCreatedAtBetweenAndTenantCode(start, end, tenantCode);
+
+        // 4. Group & count par heure locale
+        Map<Integer, Long> countsByHour = orders.stream()
+                .map(o ->
+                        // convertit en ZonedDateTime dans le tz utilisateur
+                        o.getCreatedAt()
+                                .atZoneSameInstant(systemZone)
+                                     .getHour()
+                )
+                .collect(Collectors.groupingBy(
+                        Function.identity(),
+                        Collectors.counting()
+                ));
+
+        // 5. Construis la liste finale (0h→23h), avec remplissage à 0
+        return IntStream.range(0, 24)
+                .mapToObj(hour -> new DomainHourlyOrderStat(
+                        hour,
+                        countsByHour.getOrDefault(hour, 0L)
                 ))
-                .toList();
+                .collect(Collectors.toList());
     }
 }

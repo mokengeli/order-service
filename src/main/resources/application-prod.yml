@@ -20,9 +20,9 @@ spring:
       hibernate:
         default_schema: ${POSTGRES_SCHEMA:order_schema}
         jdbc:
-          time_zone: ${TIME_ZONE:GMT+01:00}
+          time_zone: ${TIME_ZONE:Europe/Paris}
   jackson:
-    time-zone: ${TIME_ZONE:GMT+01:00}
+    time-zone: ${TIME_ZONE:Europe/Paris}
 
 security:
   cors:
