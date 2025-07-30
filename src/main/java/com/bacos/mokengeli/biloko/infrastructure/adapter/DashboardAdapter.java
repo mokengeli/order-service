@@ -103,13 +103,13 @@ public class DashboardAdapter implements DashboardPort {
     ) {
         OffsetDateTime start = DateUtils.startOfDay(startDate);
         OffsetDateTime end = DateUtils.endOfDay(endDate);
-
+        List<OrderItemState> orderItemStates = Arrays.asList(OrderItemState.SERVED, OrderItemState.PAID);
         long total = orderItemRepository.countServedItems(
-                OrderItemState.SERVED, start, end, tenantCode
+                orderItemStates, start, end, tenantCode
         );
 
         var perCategory = orderItemRepository.findDishesPerCategory(
-                        OrderItemState.SERVED, start, end, tenantCode
+                        orderItemStates, start, end, tenantCode
                 ).stream()
                 .map(p -> new DomainDishCategoryStat(
                         p.getCategoryName(),
@@ -118,7 +118,7 @@ public class DashboardAdapter implements DashboardPort {
                 .collect(Collectors.toList());
 
         var perHour = orderItemRepository.findDishesPerHour(
-                        OrderItemState.SERVED, start, end, tenantCode
+                        orderItemStates, start, end, tenantCode
                 ).stream()
                 .map(p -> new DomainDishHourStat(
                         p.getHour(),

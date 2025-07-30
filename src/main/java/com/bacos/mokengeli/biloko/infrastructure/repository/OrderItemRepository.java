@@ -77,12 +77,12 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             SELECT COUNT(i)
               FROM OrderItem i
               JOIN i.order o
-             WHERE i.state = :servedState
+             WHERE i.state IN :itemStates
                AND o.createdAt BETWEEN :start AND :end
                AND o.tenant.code = :tenantCode
             """)
     long countServedItems(
-            @Param("servedState") OrderItemState servedState,
+            @Param("itemStates") List<OrderItemState> itemStates,
             @Param("start") OffsetDateTime start,
             @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode
@@ -96,14 +96,14 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
               JOIN i.dish d
               JOIN d.dishCategories dc
               JOIN dc.category c
-             WHERE i.state = :servedState
+             WHERE i.state IN :itemStates
                AND o.createdAt BETWEEN :start AND :end
                AND o.tenant.code = :tenantCode
              GROUP BY c.name
              ORDER BY value DESC
             """)
     List<CategoryStatProjection> findDishesPerCategory(
-            @Param("servedState") OrderItemState servedState,
+            @Param("itemStates") List<OrderItemState> itemStates,
             @Param("start") OffsetDateTime start,
             @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode
@@ -114,14 +114,14 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
                    COUNT(i)           AS value
               FROM OrderItem i
               JOIN i.order o
-             WHERE i.state = :servedState
+             WHERE i.state IN :itemStates
                AND o.createdAt BETWEEN :start AND :end
                AND o.tenant.code = :tenantCode
              GROUP BY HOUR(i.createdAt)
              ORDER BY hour
             """)
     List<HourStatProjection> findDishesPerHour(
-            @Param("servedState") OrderItemState servedState,
+            @Param("itemStates") List<OrderItemState> itemStates,
             @Param("start") OffsetDateTime start,
             @Param("end") OffsetDateTime end,
             @Param("tenantCode") String tenantCode
