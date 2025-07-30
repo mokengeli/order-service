@@ -115,9 +115,29 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findAllByCreatedAtBetweenAndTenantCode(OffsetDateTime start, OffsetDateTime end, String tenantCode);
 
+    @Query("""
+        SELECT
+          o.paymentStatus AS status,
+          COUNT(o)         AS count
+        FROM Order o
+        WHERE o.createdAt BETWEEN :start AND :end
+          AND o.tenant.code = :tenantCode
+        GROUP BY o.paymentStatus
+        """)
+    List<PaymentStatusCountProjection> findOrderCountByPaymentStatus(
+            @Param("start") OffsetDateTime start,
+            @Param("end")   OffsetDateTime end,
+            @Param("tenantCode") String tenantCode
+    );
+
     interface HourlyOrderProjection {
         Integer getHour();
 
         Long getOrders();
+    }
+
+    interface PaymentStatusCountProjection {
+        OrderPaymentStatus getStatus();
+        Long              getCount();
     }
 }

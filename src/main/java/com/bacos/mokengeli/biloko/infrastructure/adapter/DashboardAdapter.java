@@ -274,5 +274,29 @@ public class DashboardAdapter implements DashboardPort {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<DomainPaymentStatusStat> getOrderCountByPaymentStatus(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    ) {
+        // bornes UTC sur la journée
+        OffsetDateTime start = DateUtils.startOfDay(startDate);
+        OffsetDateTime end   = DateUtils.endOfDay(endDate);
+
+        // requête groupée en base
+        List<OrderRepository.PaymentStatusCountProjection> rows =
+                orderRepository.findOrderCountByPaymentStatus(
+                        start, end, tenantCode
+                );
+
+        // mapping vers le DTO domaine
+        return rows.stream()
+                .map(p -> new DomainPaymentStatusStat(
+                        p.getStatus(),
+                        p.getCount()
+                ))
+                .collect(Collectors.toList());
+    }
 
 }

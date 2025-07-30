@@ -154,4 +154,20 @@ public class DashboardController {
         }
     }
 
+    @GetMapping("/orders/payment-status")
+    public List<DomainPaymentStatusStat> getPaymentStatusStats(
+            @RequestParam String tenantCode,
+            @RequestParam("start")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam("end")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
+    ) {
+        try {
+            return dashboardService.getOrderCountByPaymentStatus(start, end, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
 }

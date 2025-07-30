@@ -48,4 +48,10 @@ public interface DashboardPort {
             LocalDate date,
             String tenantCode
     );
+
+    List<DomainPaymentStatusStat> getOrderCountByPaymentStatus(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    );
 }

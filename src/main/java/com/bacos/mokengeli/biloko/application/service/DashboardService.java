@@ -204,5 +204,22 @@ public class DashboardService {
             return dashboardPort.getDailyDishDistribution(start, end, tenantCode);
         }
     }
+
+    public List<DomainPaymentStatusStat> getOrderCountByPaymentStatus(
+            LocalDate start,
+            LocalDate end,
+            String tenantCode
+    ) throws ServiceException {
+        // contrôle multi-tenant identique aux autres endpoints
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get the getOrderCountByPaymentStatus of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardPort.getOrderCountByPaymentStatus(start, end, tenantCode);
+    }
 }
 
