@@ -18,19 +18,27 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     Boolean isOrderItemOfTenantCode(@Param("id") Long id, @Param("tenantCode") String tenantCode);
 
     @Query("""
-              SELECT
-                i.dish.id      AS dishId,
-                i.dish.name    AS name,
-                COUNT(i)       AS quantity,
-                SUM(i.unitPrice) AS revenue
-              FROM OrderItem i
-              JOIN i.order o
-              WHERE o.createdAt BETWEEN :start AND :end
-                AND o.tenant.code = :tenantCode
-                AND i.state IN :dishesState
-              GROUP BY i.dish.id, i.dish.name
-              ORDER BY quantity DESC
-            """)
+        SELECT
+          i.dish.id            AS dishId,
+          i.dish.name          AS name,
+          COUNT(i)             AS quantity,
+          SUM(i.unitPrice)     AS revenue,
+          i.currency.id        AS currencyId,
+          i.currency.label     AS currencyLabel,
+          i.currency.code      AS currencyCode
+        FROM OrderItem i
+        JOIN i.order o
+        WHERE o.createdAt BETWEEN :start AND :end
+          AND o.tenant.code = :tenantCode
+          AND i.state IN :dishesState
+        GROUP BY
+          i.dish.id,
+          i.dish.name,
+          i.currency.id,
+          i.currency.label,
+          i.currency.code
+        ORDER BY quantity DESC
+        """)
     List<TopDishProjection> findTopDishesServedProjection(
             @Param("dishesState") List<OrderItemState> dishesState,
             @Param("start") OffsetDateTime start,
@@ -120,6 +128,17 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     );
 
     /**
+     * Récupère tous les OrderItem dont la commande associée
+     * a été créée entre start et end, pour ce tenant.
+     */
+    List<OrderItem> findAllByOrder_CreatedAtBetweenAndOrder_Tenant_Code(
+            OffsetDateTime start,
+            OffsetDateTime end,
+            String tenantCode
+    );
+
+
+    /**
      * Nombre de plats servis par catégorie.
      */
     interface CategoryStatProjection {
@@ -146,13 +165,13 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     }
 
     interface TopDishProjection {
-        Long getDishId();
-
+        Long   getDishId();
         String getName();
-
-        Long getQuantity();
-
+        Long   getQuantity();
         Double getRevenue();
+        Long   getCurrencyId();
+        String getCurrencyLabel();
+        String getCurrencyCode();
     }
 
 }

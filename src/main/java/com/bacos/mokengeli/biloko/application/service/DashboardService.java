@@ -153,5 +153,56 @@ public class DashboardService {
         return dashboardPort.getHourlyOrderDistribution(date, tenantCode);
     }
 
+    public List<DomainHourlyDishStat> getHourlyDishDistribution(
+            LocalDate date,
+            String tenantCode
+    ) throws ServiceException {
+        // contrôle multi-tenant identique aux autres endpoints
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get the getHourlyDistribution of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardPort.getHourlyDishDistribution(date, tenantCode);
+    }
+
+    public List<DomainDailyOrderStat> getDailyOrderDistribution(
+            LocalDate start,
+            LocalDate end,
+            String tenantCode
+    ) throws ServiceException {
+        // contrôle multi-tenant identique aux autres endpoints
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get the getDailyOrderDistribution of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardPort.getDailyOrderDistribution(start, end, tenantCode);
+    }
+
+    public List<DomainDailyDishStat> getDailyDishDistribution(
+            LocalDate start,
+            LocalDate end,
+            String tenantCode
+    ) throws ServiceException {
+        {
+            // contrôle multi-tenant identique aux autres endpoints
+            ConnectedUser connectedUser = userAppService.getConnectedUser();
+            if (!userAppService.isAdminUser() &&
+                    !connectedUser.getTenantCode().equals(tenantCode)) {
+                String uuid = UUID.randomUUID().toString();
+                log.error("[{}]: User [{}] Tenant [{}] try to get the getDailyDishDistribution of another tenant: {}", uuid,
+                        connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+                throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+            }
+            return dashboardPort.getDailyDishDistribution(start, end, tenantCode);
+        }
+    }
 }
 

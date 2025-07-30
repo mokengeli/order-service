@@ -1,5 +1,6 @@
 package com.bacos.mokengeli.biloko.application.domain.dashboard;
 
+import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,5 +14,7 @@ public class DomainTopDish {
     private Long dishId;
     private String name;
     private Long quantity;
+    private DomainCurrency currency;
     private Double revenue;
+
 }

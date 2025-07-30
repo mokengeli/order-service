@@ -108,4 +108,50 @@ public class DashboardController {
             );
         }
     }
+
+    @GetMapping("/dishes/hourly-distribution")
+    public List<DomainHourlyDishStat> getHourlyDishStats(
+            @RequestParam String tenantCode,
+            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        try {
+            return dashboardService.getHourlyDishDistribution(date, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
+
+    @GetMapping("/orders/daily")
+    public List<DomainDailyOrderStat> getDailyStats(
+            @RequestParam String tenantCode,
+            @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
+    ) {
+        try {
+            return dashboardService.getDailyOrderDistribution(start, end, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
+    @GetMapping("/dishes/daily")
+    public List<DomainDailyDishStat> getDailyDishStats(
+            @RequestParam String tenantCode,
+            @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
+    ) {
+        try {
+            return dashboardService.getDailyDishDistribution(start, end, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
 }
