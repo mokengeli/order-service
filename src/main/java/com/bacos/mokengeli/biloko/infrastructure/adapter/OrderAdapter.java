@@ -3,9 +3,11 @@ package com.bacos.mokengeli.biloko.infrastructure.adapter;
 import com.bacos.mokengeli.biloko.application.domain.*;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
+import com.bacos.mokengeli.biloko.application.domain.model.OrderNotification;
 import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.OrderPort;
+import com.bacos.mokengeli.biloko.application.service.OrderNotificationService;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.OrderMapper;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.RefTableMapper;
 import com.bacos.mokengeli.biloko.infrastructure.mapper.TenantMapper;
@@ -20,7 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,11 +38,14 @@ public class OrderAdapter implements OrderPort {
     private final InventoryService inventoryService;
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final UserProxy userProxy;
+    private final DebtValidationRepository debtValidationRepository;
+    private final FinancialLossRepository financialLossRepository;
+    private final OrderNotificationService orderNotificationService;
 
 
     @Autowired
     public OrderAdapter(OrderRepository orderRepository, CurrencyRepository currencyRepository,
-                        TenantRepository tenantRepository, DishRepository dishRepository, RefTableRepository refTableRepository, OrderItemRepository orderItemRepository, InventoryService inventoryService, PaymentTransactionRepository paymentTransactionRepository, UserProxy userProxy) {
+                        TenantRepository tenantRepository, DishRepository dishRepository, RefTableRepository refTableRepository, OrderItemRepository orderItemRepository, InventoryService inventoryService, PaymentTransactionRepository paymentTransactionRepository, UserProxy userProxy, DebtValidationRepository debtValidationRepository, FinancialLossRepository financialLossRepository, OrderNotificationService orderNotificationService) {
         this.orderRepository = orderRepository;
         this.currencyRepository = currencyRepository;
         this.tenantRepository = tenantRepository;
@@ -50,6 +55,9 @@ public class OrderAdapter implements OrderPort {
         this.inventoryService = inventoryService;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.userProxy = userProxy;
+        this.debtValidationRepository = debtValidationRepository;
+        this.financialLossRepository = financialLossRepository;
+        this.orderNotificationService = orderNotificationService;
     }
 
     @Transactional
@@ -393,6 +401,109 @@ public class OrderAdapter implements OrderPort {
         return this.orderRepository.isTableFree(refTableId);
     }
 
+    @Override
+    @Transactional
+    public DomainCloseOrderWithDebt closeOrderWithDebt(
+            DomainCloseOrderWithDebtRequest req,
+            String tenantCode,
+            String employeeNumber
+    ) throws ServiceException {
+        // 1. Récupérer la commande
+        Order order = orderRepository.findById(req.getOrderId())
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                        "Commande non trouvée = " + req.getOrderId()));
+
+        // 2. Vérifier qu'elle n'est pas déjà payée
+        if (order.getPaymentStatus() == OrderPaymentStatus.FULLY_PAID) {
+            throw new ServiceException(UUID.randomUUID().toString(), "La commande est déjà entièrement payée");
+        }
+
+        boolean validationRequired = false;
+        Long validationRequestId = null;
+
+        // 3 et 4. Selon le type de validation
+        if (ValidationType.IMMEDIATE.name().equals(req.getValidationType())) {
+            // PIN requis et vérification
+            if (req.getValidationCode() == null) {
+                throw new ServiceException(UUID.randomUUID().toString(), "PIN requis pour validation immédiate");
+            }
+            if (!userProxy.isValidationPinOk(req.getValidationCode())) {
+                throw new ServiceException(UUID.randomUUID().toString(), "PIN incorrect");
+            }
+            // création de la validation approuvée
+            DebtValidation dv = DebtValidation.builder()
+                    .order(order)
+                    .tenantCode(tenantCode)
+                    .amount(BigDecimal.valueOf(req.getAmount()))
+                    .reason(req.getReason())
+                    .currency(order.getCurrency())
+                    .requestedBy(employeeNumber)
+                    .validatedBy(employeeNumber)
+                    .status(DebtValidationStatus.APPROVED)
+                    .createdAt(OffsetDateTime.now())
+                    .validatedAt(OffsetDateTime.now())
+                    .build();
+            debtValidationRepository.save(dv);
+
+        } else {
+            // REMOTE
+            validationRequired = true;
+            DebtValidation dv = DebtValidation.builder()
+                    .order(order)
+                    .tenantCode(tenantCode)
+                    .amount(BigDecimal.valueOf(req.getAmount()))
+                    .reason(req.getReason())
+                    .currency(order.getCurrency())
+                    .requestedBy(employeeNumber)
+                    .status(DebtValidationStatus.PENDING)
+                    .createdAt(OffsetDateTime.now())
+                    .build();
+            debtValidationRepository.save(dv);
+            validationRequestId = dv.getId();
+            /** ws.notifyManagers(tenantCode, new DebtValidationNotification(
+             dv.getId(), order.getId(), order.getTable().getId(), tenantCode, req.getAmount()
+             ));*/
+
+        }
+
+        // 5. Mise à jour de la commande et de la table
+        order.setPaymentStatus(OrderPaymentStatus.CLOSED_WITH_DEBT);
+        orderRepository.save(order);
+        DebtValidation debtValidation = null;
+        if (validationRequired) {
+            Optional<DebtValidation> optDebValidation = debtValidationRepository.findById(validationRequestId);
+            if (optDebValidation.isPresent()) {
+                debtValidation = optDebValidation.get();
+            }
+        }
+        // Création de la perte financière
+        FinancialLoss loss = FinancialLoss.builder()
+                .order(order)
+                .tenantCode(tenantCode)
+                .amount(BigDecimal.valueOf(req.getAmount()))
+                .currency(order.getCurrency())
+                .reason(req.getReason())
+                .debtValidation(debtValidation)
+                .createdBy(employeeNumber)
+                .createdAt(OffsetDateTime.now())
+                .build();
+        financialLossRepository.save(loss);
+
+        // Notification de changement de statut de table
+        /** ws.notifyTableStatus(tenantCode, new TableStatusNotification(
+         order.getTable().getId(), TableStatus.FREE, order.getId()
+         ));*/
+        this.orderNotificationService.notifyStateChange(order.getId(), order.getRefTable().getId(),
+                OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE, OrderItemState.SERVED.name(), OrderItemState.SERVED.name(),
+                TableState.FREE.name());
+
+        return DomainCloseOrderWithDebt.builder()
+                .message("Commande clôturée avec impayé")
+                .validationRequired(validationRequired)
+                .validationRequestId(validationRequestId)
+                .build();
+    }
+
     // Méthode helper pour mapper une Order en DomainOrder avec paiements
     private DomainOrder orderToDomainWithPayments(Order order) {
         DomainOrder domainOrder = OrderMapper.toDomain(order);
@@ -427,5 +538,128 @@ public class OrderAdapter implements OrderPort {
                 .build();
     }
 
+    @Override
+    @Transactional
+    public List<DomainPendingDebtValidation> getPendingDebtValidations(
+            String tenantCode
+    ) {
+        // 1. récupérer les 50 dernières demandes pending
+        List<DebtValidation> list = debtValidationRepository
+                .findByTenantCodeAndStatusOrderByCreatedAtDesc(
+                        tenantCode,
+                        DebtValidationStatus.PENDING,
+                        PageRequest.of(0, 50)
+                );
+        // 2. transformer en DTO
+
+
+        return list.stream().map(dv -> {
+            DomainPendingDebtValidation dto = new DomainPendingDebtValidation();
+            dto.setId(dv.getId());
+            dto.setOrderId(dv.getOrder().getId());
+            RefTable table = dv.getOrder().getRefTable();
+            dto.setTableId(table.getId());
+            dto.setTableName(table.getName());
+            dto.setAmount(dv.getAmount().doubleValue());
+            dto.setCurrency(dv.getCurrency().getCode());
+            dto.setReason(dv.getReason());
+            dto.setServerName(getRequesterName(dv.getRequestedBy()));
+            dto.setCreatedAt(dv.getCreatedAt());
+            dto.setStatus(dv.getStatus().name());
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    private String getRequesterName(String identifier) {
+        Optional<DomainUser> domainUserOptional = this.userProxy.getUserByIdentifier(identifier);
+        if (domainUserOptional.isPresent()) {
+            DomainUser domainUser = domainUserOptional.get();
+            return domainUser.getFirstName() + " " + domainUser.getLastName();
+        }
+        return "";
+    }
+
+    @Override
+    @Transactional
+    public DomainValidateDebtValidation processDebtValidation(
+            DomainValidateDebtValidationRequest req,
+            String identifier
+    ) throws ServiceException {
+        // 1. Récupérer la demande PENDING
+        DebtValidation dv = debtValidationRepository
+                .findByIdAndStatus(req.getDebtValidationId(), DebtValidationStatus.PENDING)
+                .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "Validation request not found or already processed"));
+        // 2.
+
+        Order order = dv.getOrder();
+        // 3. Traitement
+        Optional<DomainUser> userByIdentifier = this.userProxy.getUserByIdentifier(identifier);
+        String tenantCode = dv.getTenantCode();
+        DomainUser domainUser = userByIdentifier.get();
+        if (req.isApproved()) {
+            // PIN manager
+            if (req.getValidationCode() == null) {
+                throw new ServiceException(UUID.randomUUID().toString(), "PIN required for approval");
+            }
+            if (!userProxy.isValidationPinOk(req.getValidationCode())) {
+                throw new ServiceException(UUID.randomUUID().toString(), "Invalid PIN");
+            }
+
+
+            dv.setStatus(DebtValidationStatus.APPROVED);
+            dv.setValidatedBy(domainUser.getEmployeeNumber());
+            dv.setValidatedAt(OffsetDateTime.now());
+            debtValidationRepository.save(dv);
+            // confirmer la perte financière
+            FinancialLoss loss = new FinancialLoss();
+            loss.setOrder(order);
+            loss.setTenantCode(tenantCode);
+            loss.setAmount(dv.getAmount());
+            loss.setCurrency(dv.getCurrency());
+            loss.setReason(dv.getReason());
+            loss.setDebtValidation(dv);
+            loss.setCreatedBy(domainUser.getEmployeeNumber());
+            loss.setCreatedAt(OffsetDateTime.now());
+            financialLossRepository.save(loss);
+            // notifier serveur
+            /**   ws.sendToUser(order.getRequestedBy().getId(), new DebtValidationResponseNotification(
+             true, order.getId(), "Votre demande a été approuvée"
+             ));*/
+        } else {
+            // refus
+            if (req.getRejectionReason() == null) {
+                throw new ServiceException(UUID.randomUUID().toString(), "Rejection reason required");
+            }
+            dv.setStatus(DebtValidationStatus.REJECTED);
+            dv.setRejectionReason(req.getRejectionReason());
+            dv.setValidatedBy(domainUser.getEmployeeNumber());
+            dv.setValidatedAt(OffsetDateTime.now());
+            debtValidationRepository.save(dv);
+            // rouvrir commande
+            order.setPaymentStatus(OrderPaymentStatus.UNPAID);
+
+            orderRepository.save(order);
+            // notifier serveur
+            /**  ws.sendToUser(order.getRequestedBy().getId(), new DebtValidationResponseNotification(
+             false, order.getId(), "Votre demande a été refusée"
+             ));
+             // notifier table status
+             ws.sendToTenant(tenantCode, new TableStatusNotification(
+             order.getTable().getId(), TableStatus.OCCUPIED, order.getId()
+             ));*/
+            this.orderNotificationService.notifyStateChange(order.getId(), order.getRefTable().getId(),
+                    OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE, OrderItemState.SERVED.name(), OrderItemState.SERVED.name(),
+                    TableState.OCCUPIED.name());
+        }
+        return new DomainValidateDebtValidation(
+                "Validation processed successfully", req.isApproved()
+        );
+    }
+
+    @Override
+    public String getDebtValidationTenantCode(Long debtValidationId) {
+        return debtValidationRepository.findTenantCode(debtValidationId)
+                .orElse("");
+    }
 
 }

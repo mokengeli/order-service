@@ -235,3 +235,44 @@ CREATE TABLE payment_transactions (
 CREATE INDEX IF NOT EXISTS idx_payment_transactions_order_id
     ON payment_transactions (order_id, created_at DESC);
 
+-- Ajout supplementaire 30/07/2025
+-- Table pour les demandes de validation
+CREATE TABLE debt_validations (
+                                  id BIGSERIAL PRIMARY KEY,
+                                  order_id BIGINT NOT NULL REFERENCES orders(id),
+                                  tenant_code VARCHAR(50) NOT NULL,
+                                  amount DECIMAL(10,2) NOT NULL,
+                                  currency_id BIGINT NOT NULL REFERENCES currencies(id),
+                                  reason TEXT,
+                                  requested_by VARCHAR(50) NOT NULL,
+                                  validated_by VARCHAR(50) NULL,
+                                  status VARCHAR(20) NOT NULL DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED
+                                  rejection_reason TEXT,
+                                  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                  validated_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_debt_tenant_status
+    ON debt_validations (tenant_code, status);
+
+CREATE INDEX IF NOT EXISTS idx_debt_order_id
+    ON debt_validations (order_id);
+
+-- Table pour l'historique des pertes
+CREATE TABLE financial_losses (
+                                  id BIGSERIAL PRIMARY KEY,
+                                  order_id BIGINT NOT NULL REFERENCES orders(id),
+                                  tenant_code VARCHAR(50) NOT NULL,
+                                  amount DECIMAL(10,2) NOT NULL,
+                                  currency_id BIGINT NOT NULL REFERENCES currencies(id),
+                                  reason TEXT,
+                                  validation_id BIGINT REFERENCES debt_validations(id),
+                                  created_by VARCHAR(50) NOT NULL,
+                                  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_fi_loss_tenant_date
+    ON financial_losses ( tenant_code, created_at);
+
+-- Ajouter à la table orders
+ALTER TABLE orders ADD COLUMN has_pending_validation BOOLEAN DEFAULT FALSE;

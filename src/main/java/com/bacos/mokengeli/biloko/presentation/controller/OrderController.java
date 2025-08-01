@@ -1,8 +1,7 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
 
-import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
-import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
+import com.bacos.mokengeli.biloko.application.domain.*;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrderItem;
 import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -149,4 +148,40 @@ public class OrderController {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }
     }
+
+    @PreAuthorize("hasAuthority('CLOSE_ORDER_WITH_DEBT')")
+    @PostMapping("/close-with-debt")
+    public DomainCloseOrderWithDebt closeWithDebt(
+            @RequestBody DomainCloseOrderWithDebtRequest request
+    ) {
+        try {
+            return orderService.closeOrderWithDebt(request);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    @GetMapping("debt-validations/pending")
+    public List<DomainPendingDebtValidation> getPending(
+            @RequestParam("tenantCode") String tenantCode
+    ) {
+        try {
+            return orderService.fetchPendingDebtValidations(tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    @PreAuthorize("hasAuthority('ORDER_DEBT_VALIDATION')")
+    @PostMapping("/debt-validations/validate")
+    public DomainValidateDebtValidation validate(
+            @RequestBody DomainValidateDebtValidationRequest req
+    ) {
+        try {
+            return orderService.processDebtValidation(req);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
 }

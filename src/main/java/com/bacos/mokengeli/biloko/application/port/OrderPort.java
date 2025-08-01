@@ -1,9 +1,6 @@
 package com.bacos.mokengeli.biloko.application.port;
 
-import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
-import com.bacos.mokengeli.biloko.application.domain.DomainRefTable;
-import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
-import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
+import com.bacos.mokengeli.biloko.application.domain.*;
 import com.bacos.mokengeli.biloko.application.domain.model.CreateOrder;
 import com.bacos.mokengeli.biloko.application.domain.model.UpdateOrder;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -71,5 +68,14 @@ public interface OrderPort {
 
     boolean isTableFree(Long refTableId);
 
+    DomainCloseOrderWithDebt closeOrderWithDebt(DomainCloseOrderWithDebtRequest request, String tenantCode, String employeeNumber) throws ServiceException;
 
+    List<DomainPendingDebtValidation> getPendingDebtValidations(String tenantCode);
+
+    DomainValidateDebtValidation processDebtValidation(
+            DomainValidateDebtValidationRequest request,
+            String identifier
+    ) throws ServiceException;
+
+    String getDebtValidationTenantCode(Long debtValidationId);
 }
