@@ -56,8 +56,18 @@ public class Order {
     @Column(name = "paid_amount", nullable = false)
     private Double paidAmount = 0.0;
 
+    @Column(name = "has_pending_validation", nullable = false)
+    private boolean hasPendingValidation = false;
+
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaymentTransaction> payments;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DebtValidation> debtValidations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FinancialLoss> financialLosses = new ArrayList<>();
 
     public void addItem(OrderItem item) {
         if (items == null) {

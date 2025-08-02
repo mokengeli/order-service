@@ -2,6 +2,7 @@ package com.bacos.mokengeli.biloko.infrastructure.repository.proxy;
 
 
 import com.bacos.mokengeli.biloko.application.domain.DomainTenant;
+import com.bacos.mokengeli.biloko.application.domain.DomainUser;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,4 +16,10 @@ import java.util.Optional;
 public interface UserProxy {
     @GetMapping("/api/user/tenant")
     Optional<DomainTenant> getTenantByCode(@RequestParam("code") String tenantCode);
+
+    @GetMapping("/api/user/verify/validation/pin")
+    boolean isValidationPinOk(@RequestParam("pin") Integer pin);
+
+    @GetMapping("/api/user/by-identifier")
+    Optional<DomainUser> getUserByIdentifier(@RequestParam("identifier") String identifier);
 }

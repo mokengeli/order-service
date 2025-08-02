@@ -1,9 +1,6 @@
 package com.bacos.mokengeli.biloko.application.service;
 
-import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
-import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
-import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
-import com.bacos.mokengeli.biloko.application.domain.TableState;
+import com.bacos.mokengeli.biloko.application.domain.*;
 import com.bacos.mokengeli.biloko.application.domain.model.*;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.DishPort;
@@ -231,5 +228,45 @@ public class OrderService {
 
         }
         return order.get();
+    }
+
+    public DomainCloseOrderWithDebt closeOrderWithDebt(DomainCloseOrderWithDebtRequest request) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        boolean orderBelongToTenant = this.orderPort.isOrderBelongToTenant(request.getOrderId(), connectedUser.getTenantCode());
+        if (!orderBelongToTenant) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to make a debt action of another tenant code order Id = [{}]", errorId,
+                    connectedUser.getEmployeeNumber(), request.getOrderId());
+            throw new ServiceException(errorId, "You don't have the right to get this order.");
+        }
+        return orderPort.closeOrderWithDebt(request, connectedUser.getTenantCode(), connectedUser.getEmployeeNumber());
+    }
+
+    public List<DomainPendingDebtValidation> fetchPendingDebtValidations(
+            String tenantCode
+    ) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        if (!this.userAppService.isAdminUser()
+                && !connectedUser.getTenantCode().equals(tenantCode)) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] of tenant [{}] try to add dish of tenant [{}]", errorId, connectedUser.getEmployeeNumber(),
+                    connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(errorId, "You can't fetchPendingDebtValidations owning by another partener");
+        }
+
+        return orderPort.getPendingDebtValidations(tenantCode);
+    }
+
+    public DomainValidateDebtValidation processDebtValidation(DomainValidateDebtValidationRequest req) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        String debtTenantCode = orderPort.getDebtValidationTenantCode(req.getDebtValidationId());
+        if (!debtTenantCode.equals(connectedUser.getTenantCode())) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] of tenant [{}] try to add dish of tenant [{}]", errorId, connectedUser.getEmployeeNumber(),
+                    connectedUser.getTenantCode(), debtTenantCode);
+            throw new ServiceException(errorId, "You can't processDebtValidation owning by another partener");
+
+        }
+        return orderPort.processDebtValidation(req, connectedUser.getEmployeeNumber());
     }
 }
