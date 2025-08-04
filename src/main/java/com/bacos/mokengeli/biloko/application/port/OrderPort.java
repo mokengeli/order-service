@@ -78,4 +78,6 @@ public interface OrderPort {
     ) throws ServiceException;
 
     String getDebtValidationTenantCode(Long debtValidationId);
+
+    void rejectOrderItem(Long orderItemId) throws ServiceException;
 }

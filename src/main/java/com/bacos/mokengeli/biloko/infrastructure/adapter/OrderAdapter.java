@@ -662,4 +662,19 @@ public class OrderAdapter implements OrderPort {
                 .orElse("");
     }
 
+
+    @Override
+    @Transactional
+    public void rejectOrderItem(Long orderItemId) throws ServiceException {
+        OrderItem orderItem = this.orderItemRepository.findById(orderItemId).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
+                "No OrderItem found with id " + orderItemId));
+        orderItem.setState(OrderItemState.REJECTED);
+
+        Order order = orderItem.getOrder();
+        Double totalPrice = order.getTotalPrice();
+        Double unitPrice = orderItem.getUnitPrice();
+        Double adjustedTotalPrice = totalPrice - unitPrice > 0 ? totalPrice - unitPrice : 0;
+        order.setTotalPrice(adjustedTotalPrice);
+        this.orderItemRepository.save(orderItem);
+    }
 }
