@@ -15,6 +15,7 @@ spring:
       idle-timeout: ${HIKARI-IDLE-TIMEOUT}
       connection-timeout: ${HIKARI-CONNECTION-TIMEOUT}
       max-lifetime: ${HIKARI-MAX-LIFETIME}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION}
   jpa:
     properties:
       hibernate:
