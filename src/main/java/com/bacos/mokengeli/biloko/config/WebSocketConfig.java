@@ -48,6 +48,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .addInterceptors(authInterceptor) // AJOUTER L'INTERCEPTEUR
                 // Configuration SockJS
                 .withSockJS()
+                .setSessionCookieNeeded(false)
                 // =================================================================
                 // SockJS Heartbeat : Transport Level (TCP/HTTP keep-alive)
                 // =================================================================
