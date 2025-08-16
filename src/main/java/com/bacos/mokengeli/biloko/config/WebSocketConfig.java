@@ -9,6 +9,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -41,6 +42,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         return scheduler;
     }
+
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/api/order/ws")
@@ -54,6 +56,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 // =================================================================
                 .setHeartbeatTime(45000)        // 45 secondes - SockJS ping/pong
                 .setDisconnectDelay(5000);      // 5 secondes avant fermeture
+
+        // AJOUTER : Endpoint WebSocket natif pour mobile HTTPS
+        registry.addEndpoint("/api/order/ws-native")
+                .setAllowedOriginPatterns("*")
+                .addInterceptors(authInterceptor)
+                // PAS de .withSockJS() ici - WebSocket natif uniquement
+                .setHandshakeHandler(new DefaultHandshakeHandler());
     }
 
     @Override
