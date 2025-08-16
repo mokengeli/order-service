@@ -56,5 +56,6 @@ inventory:
   service-id: inventory-service
 logging:
   level:
-    com.zaxxer.hikari: INFO
+    org.springframework.web:  ${LOG_LEVEL:INFO}
+    com.bacos.mokengeli.biloko: ${LOG_LEVEL:INFO}
 

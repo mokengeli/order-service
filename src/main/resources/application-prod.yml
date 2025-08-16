@@ -55,3 +55,9 @@ user:
   service-id: ${USER_SERVICE_ID:user-service}
 inventory:
   service-id: ${INVENTORY_SERVICE_ID:inventory-service}
+
+
+logging:
+  level:
+    org.springframework.web:  ${LOG_LEVEL:INFO}
+    com.bacos.mokengeli.biloko: ${LOG_LEVEL:INFO}
