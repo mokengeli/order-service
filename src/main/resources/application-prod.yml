@@ -55,3 +55,7 @@ user:
   service-id: ${USER_SERVICE_ID:user-service}
 inventory:
   service-id: ${INVENTORY_SERVICE_ID:inventory-service}
+
+logging:
+  level:
+    com.bacos.mokengeli.biloko: ${LOG_LEVEL}

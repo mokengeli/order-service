@@ -57,4 +57,5 @@ inventory:
 logging:
   level:
     com.zaxxer.hikari: INFO
+    com.bacos.mokengeli.biloko: INFO
 
