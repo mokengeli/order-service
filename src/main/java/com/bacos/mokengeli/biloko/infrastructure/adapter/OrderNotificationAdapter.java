@@ -2,23 +2,23 @@ package com.bacos.mokengeli.biloko.infrastructure.adapter;
 
 import com.bacos.mokengeli.biloko.application.domain.model.OrderNotification;
 import com.bacos.mokengeli.biloko.application.port.OrderNotificationPort;
+import com.corundumstudio.socketio.SocketIOServer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 public class OrderNotificationAdapter implements OrderNotificationPort {
-    private final SimpMessagingTemplate messagingTemplate;
-    private static final String ORDER_DESTINATION = "/topic/orders/";
+
+    private final SocketIOServer socketIOServer;
 
     @Autowired
-    public OrderNotificationAdapter(SimpMessagingTemplate messagingTemplate) {
-        this.messagingTemplate = messagingTemplate;
+    public OrderNotificationAdapter(SocketIOServer socketIOServer) {
+        this.socketIOServer = socketIOServer;
     }
 
     @Override
     public void notifyWebSocketUser(OrderNotification notification) {
-        String destination = ORDER_DESTINATION + notification.getTenantCode();
-        messagingTemplate.convertAndSend(destination, notification);
+        String room = notification.getTenantCode();
+        socketIOServer.getRoomOperations(room).sendEvent("order-notification", notification);
     }
 }
