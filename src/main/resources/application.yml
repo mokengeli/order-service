@@ -41,6 +41,8 @@ eureka:
     register-with-eureka: true  # Le client s'enregistre dans le registre
   instance:
     prefer-ip-address: true  # Utilise l'adresse IP pour l'enregistrement (utile pour les environnements containerisés)
+    metadata-map:
+      socketio-port: ${socketio.port}
 
 management:
   endpoint:
@@ -58,4 +60,7 @@ logging:
   level:
     com.zaxxer.hikari: INFO
     com.bacos.mokengeli.biloko: INFO
+
+socketio:
+  port: 9092
 
