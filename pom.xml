@@ -103,13 +103,11 @@
             <version>${jjwt-jackson.version}</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- Socket.io server -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-messaging</artifactId>
+            <groupId>com.corundumstudio.socketio</groupId>
+            <artifactId>netty-socketio</artifactId>
+            <version>2.0.6</version>
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>

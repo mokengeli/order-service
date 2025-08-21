@@ -41,15 +41,8 @@ public class SecurityConfig {
                                 "/actuator/websocket"
                         ).permitAll()
 
-                        // ✅ WebSocket endpoints - IMPORTANT pour le handshake HTTP
-                        .requestMatchers(
-                                "/api/order/ws/**",           // Legacy SockJS (temporaire)
-                                "/api/order/ws/websocket/**", // Native WebSocket
-                                "/api/order/ws/websocket"     // Native WebSocket exact path
-                        ).permitAll()
-
                         // Test endpoints (à retirer en production)
-                        .requestMatchers("/api/order/ws/test").permitAll()
+                        .requestMatchers("/api/order/socketio/**").permitAll()
                         .requestMatchers("/public/ws-status").permitAll()
 
                         // Tout le reste nécessite une authentification

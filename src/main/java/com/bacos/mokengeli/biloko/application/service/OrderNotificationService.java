@@ -37,11 +37,19 @@ public class OrderNotificationService {
                 .tableState(tableState)
                 .timestamp(LocalDateTime.now())
                 .build();
-        this.orderNotification.notifyWebSocketUser(notification);
+        this.orderNotification.sendOrderNotification(notification);
     }
 
     public void notifyStateChange(Long orderId, Long tableId, OrderNotification.OrderNotificationStatus orderNotificationStatus,
                                   String previousState, String newState, String tableState) {
         notifyStateChange(orderId, tableId, orderNotificationStatus, previousState, newState, tableState, null);
+    }
+
+    public void notifyTableUpdate(String tenantCode, Object payload) {
+        this.orderNotification.sendTableUpdate(tenantCode, payload);
+    }
+
+    public void notifyDishReady(String tenantCode, Object payload) {
+        this.orderNotification.sendDishReady(tenantCode, payload);
     }
 }
