@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
 import jakarta.annotation.PreDestroy;
+
 import java.util.Arrays;
 
 /**
@@ -61,11 +62,12 @@ public class SocketIOServerConfig {
         config.setPort(port);
 
         // CORS - Important pour React Native
-        if ("*".equals(corsOrigins)) {
+       /** if ("*".equals(corsOrigins)) {
             config.setOrigin("*");
         } else {
             config.setOrigin(corsOrigins);
-        }
+        }*/
+        config.setOrigin("*");
 
         // Transports supportés (WebSocket prioritaire, polling en fallback)
         config.setTransports(Transport.WEBSOCKET, Transport.POLLING);
@@ -122,6 +124,10 @@ public class SocketIOServerConfig {
         @Override
         public AuthorizationResult getAuthorizationResult(HandshakeData handshakeData) {
             log.debug("🔐 Authorization check for new connection");
+            log.info("🔍 Socket.io Auth Request:");
+            log.info("  - URL: {}", handshakeData.getUrl());
+            log.info("  - Headers: {}", handshakeData.getHttpHeaders());
+            log.info("  - Params: {}", handshakeData.getUrlParams());
 
             try {
                 // Extraire le token depuis les différentes sources possibles
