@@ -1,5 +1,5 @@
 server:
-  port: 0             # Port par défaut du serveur
+  port: 0  # Port par défaut du serveur REST
 
 spring:
   application:
@@ -21,14 +21,26 @@ spring:
         default_schema: order_schema
         jdbc:
           time_zone: Europe/Paris
-
   jackson:
     time-zone: Europe/Paris
 
+# Configuration Socket.io
+socketio:
+  port: 9092                    # Port dédié Socket.io
+  hostname: 0.0.0.0             # Écoute sur toutes les interfaces
+  ping-interval: 30000          # 30 secondes
+  ping-timeout: 60000           # 60 secondes
+  max-frame-payload-length: 65536  # 64KB
+  max-http-content-length: 65536   # 64KB
+  worker-threads: 4             # Threads Netty
+  cors:
+    origins: "*"                # À restreindre en production
+  migration:
+    mode: DUAL                  # STOMP_ONLY, SOCKETIO_ONLY, DUAL
 
 security:
   cors:
-    allowed-origins: http://localhost:3000
+    allowed-origins: http://localhost:3000,http://localhost:19006  # React Native Expo
   jwt:
     secret: 9a4f2c_8d3b7a1e6f#45c8a0b3f268b1d4e6-f3c8a9d2b5f8e3a9c8-b5f6v8a3d9A@
   is-ssl: false
@@ -36,26 +48,33 @@ security:
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/  # URL du serveur Eureka
-    fetch-registry: true  # Le client doit récupérer les services
-    register-with-eureka: true  # Le client s'enregistre dans le registre
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
   instance:
-    prefer-ip-address: true  # Utilise l'adresse IP pour l'enregistrement (utile pour les environnements containerisés)
+    prefer-ip-address: true
+    metadata-map:
+      socketio-port: ${socketio.port}  # Exposer le port Socket.io dans Eureka
 
 management:
   endpoint:
     websocket:
       enabled: true
+    socketio:                   # Nouvel endpoint custom
+      enabled: true
   endpoints:
     web:
       exposure:
-        include: health,info,metrics, websocket
+        include: health,info,metrics,websocket,socketio
+
 user:
   service-id: user-service
 inventory:
   service-id: inventory-service
+
 logging:
   level:
     com.zaxxer.hikari: INFO
     com.bacos.mokengeli.biloko: INFO
-
+    com.corundumstudio.socketio: INFO  # Logs Socket.io
+    io.netty: WARN                      # Logs Netty
