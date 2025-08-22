@@ -69,10 +69,11 @@ public class SocketIOEventHandler {
      */
     private void configureDefaultNamespace() {
         // Socket.io utilise "/" comme namespace par défaut
-        // S'assurer qu'il est bien configuré
         var defaultNamespace = server.getNamespace("/");
         if (defaultNamespace == null) {
-            log.error("❌ Default namespace not found!");
+            // Créer le namespace par défaut s'il n'existe pas
+            server.addNamespace("/");
+            log.info("✅ Default namespace created");
         } else {
             log.info("✅ Default namespace configured");
         }
