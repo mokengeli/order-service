@@ -3,14 +3,12 @@ package com.bacos.mokengeli.biloko.config.socketio;
 
 import com.bacos.mokengeli.biloko.config.service.JwtService;
 import com.corundumstudio.socketio.*;
-import com.corundumstudio.socketio.listener.DataListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.Arrays;
 
@@ -50,10 +48,11 @@ public class SocketIOServerConfig {
 
     /**
      * Création et configuration du serveur Socket.io
+     * IMPORTANT: Ne PAS démarrer le serveur ici, laisser le SocketIOEventHandler le faire
      */
     @Bean
     public SocketIOServer socketIOServer(JwtService jwtService) {
-        log.info("🚀 Initializing Socket.io server on {}:{}", hostname, port);
+        log.info("🚀 Configuring Socket.io server on {}:{}", hostname, port);
 
         com.corundumstudio.socketio.Configuration config = new com.corundumstudio.socketio.Configuration();
 
@@ -102,15 +101,10 @@ public class SocketIOServerConfig {
 
         server = new SocketIOServer(config);
 
-        // DÉMARRER LE SERVEUR IMMÉDIATEMENT
-        try {
-            server.start();
-            log.info("✅ Socket.io server configured and STARTED on port {}", port);
-            log.info("📡 Accepting connections at http://{}:{}/socket.io/", hostname, port);
-        } catch (Exception e) {
-            log.error("❌ Failed to start Socket.io server", e);
-            throw new RuntimeException("Socket.io server startup failed", e);
-        }
+        // NE PAS DÉMARRER LE SERVEUR ICI !
+        // Le SocketIOEventHandler s'en chargera après avoir enregistré tous les listeners
+
+        log.info("✅ Socket.io server configured (not started yet) on port {}", port);
 
         return server;
     }
@@ -199,24 +193,8 @@ public class SocketIOServerConfig {
     }
 
     /**
-     * Démarrage automatique du serveur
-     */
-    @PostConstruct
-    public void startServer() {
-        if (server != null) {
-            try {
-                server.start();
-                log.info("🟢 Socket.io server started successfully on port {}", port);
-                log.info("📡 Accepting connections at ws://{}:{}/socket.io/", hostname, port);
-            } catch (Exception e) {
-                log.error("❌ Failed to start Socket.io server", e);
-                throw new RuntimeException("Socket.io server startup failed", e);
-            }
-        }
-    }
-
-    /**
      * Arrêt propre du serveur
+     * Sera appelé automatiquement à l'arrêt de l'application
      */
     @PreDestroy
     public void stopServer() {

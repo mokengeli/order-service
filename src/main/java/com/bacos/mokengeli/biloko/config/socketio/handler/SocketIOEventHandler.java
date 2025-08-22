@@ -1,6 +1,5 @@
 package com.bacos.mokengeli.biloko.config.socketio.handler;
 
-
 import com.bacos.mokengeli.biloko.application.domain.model.OrderNotification;
 import com.bacos.mokengeli.biloko.config.service.JwtService;
 import com.bacos.mokengeli.biloko.infrastructure.socketio.model.*;
@@ -16,6 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -52,30 +53,32 @@ public class SocketIOEventHandler {
     public void init() {
         log.info("🎯 Initializing Socket.io event handlers...");
 
-        // IMPORTANT: S'assurer que le namespace par défaut est configuré
-        configureDefaultNamespace();
-
-        // Enregistrer tous les listeners
+        // Enregistrer tous les listeners AVANT de démarrer le serveur
         registerConnectionHandlers();
         registerAuthenticationHandlers();
         registerBusinessEventHandlers();
         registerUtilityHandlers();
 
-        log.info("✅ Socket.io event handlers registered successfully");
+        // MAINTENANT démarrer le serveur
+        startServer();
+
+        log.info("✅ Socket.io event handlers registered and server started successfully");
     }
 
     /**
-     * Configure le namespace par défaut
+     * Démarrage du serveur après configuration des handlers
      */
-    private void configureDefaultNamespace() {
-        // Socket.io utilise "/" comme namespace par défaut
-        var defaultNamespace = server.getNamespace("/");
-        if (defaultNamespace == null) {
-            // Créer le namespace par défaut s'il n'existe pas
-            server.addNamespace("/");
-            log.info("✅ Default namespace created");
-        } else {
-            log.info("✅ Default namespace configured");
+    private void startServer() {
+        try {
+            server.start();
+            log.info("🟢 Socket.io server started successfully on port {}",
+                    server.getConfiguration().getPort());
+            log.info("📡 Accepting connections at ws://{}:{}/socket.io/",
+                    server.getConfiguration().getHostname(),
+                    server.getConfiguration().getPort());
+        } catch (Exception e) {
+            log.error("❌ Failed to start Socket.io server", e);
+            throw new RuntimeException("Socket.io server startup failed", e);
         }
     }
 
@@ -98,6 +101,8 @@ public class SocketIOEventHandler {
                 handleDisconnect(client);
             }
         });
+
+        log.info("✅ Connection handlers registered");
     }
 
     /**
@@ -121,6 +126,8 @@ public class SocketIOEventHandler {
                         handleJoinTenant(client, data, ackRequest);
                     }
                 });
+
+        log.info("✅ Authentication handlers registered");
     }
 
     /**
@@ -153,6 +160,8 @@ public class SocketIOEventHandler {
                         handleDebtValidation(client, data, ackRequest);
                     }
                 });
+
+        log.info("✅ Business event handlers registered");
     }
 
     /**
@@ -176,6 +185,8 @@ public class SocketIOEventHandler {
                         handleEcho(client, data, ackRequest);
                     }
                 });
+
+        log.info("✅ Utility handlers registered");
     }
 
     /**
@@ -589,6 +600,17 @@ public class SocketIOEventHandler {
         stats.put("totalErrors", totalErrors);
         stats.put("tenantRooms", tenantRooms.keySet());
         return stats;
+    }
+
+    /**
+     * Arrêt propre
+     */
+    @PreDestroy
+    public void shutdown() {
+        log.info("🔴 Shutting down Socket.io event handler...");
+        if (server != null) {
+            server.stop();
+        }
     }
 
     /**
