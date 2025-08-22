@@ -67,7 +67,7 @@ public class SocketIOServerConfig {
         } else {
             config.setOrigin(corsOrigins);
         }*/
-        config.setOrigin("*");
+        config.setOrigin(null);
 
         // Transports supportés (WebSocket prioritaire, polling en fallback)
         config.setTransports(Transport.WEBSOCKET, Transport.POLLING);
