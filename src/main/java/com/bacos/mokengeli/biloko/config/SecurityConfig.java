@@ -38,28 +38,17 @@ public class SecurityConfig {
                                 "/actuator/info",
                                 "/actuator/health",
                                 "/actuator/metrics/**",
-                                "/actuator/websocket",
-                                "/actuator/socketio"  // Nouvel endpoint Socket.io
+                                "/actuator/socketio"
                         ).permitAll()
 
-                        // ✅ Socket.io endpoints - IMPORTANT
-                        // Socket.io gère sa propre authentification au handshake
+                        // Socket.io endpoints - gère sa propre authentification
                         .requestMatchers(
                                 "/socket.io/**",      // Socket.io path par défaut
                                 "/socket.io/*"        // Socket.io variations
                         ).permitAll()
 
-                        // ✅ WebSocket STOMP endpoints (temporaire pendant migration)
-                        .requestMatchers(
-                                "/api/order/ws/**",
-                                "/api/order/ws/websocket/**",
-                                "/api/order/ws/websocket"
-                        ).permitAll()
-
-                        // Test endpoints
-                        .requestMatchers("/api/order/ws/test").permitAll()
+                        // Test endpoints Socket.io
                         .requestMatchers("/api/order/socketio/test").permitAll()
-                        .requestMatchers("/public/ws-status").permitAll()
 
                         // Tout le reste nécessite une authentification
                         .anyRequest().authenticated()

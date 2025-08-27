@@ -2,7 +2,7 @@ package com.bacos.mokengeli.biloko.presentation.controller;
 
 import com.bacos.mokengeli.biloko.application.domain.model.OrderNotification;
 import com.bacos.mokengeli.biloko.config.socketio.handler.SocketIOEventHandler;
-import com.bacos.mokengeli.biloko.infrastructure.adapter.socketio.SocketIONotificationAdapter;
+import com.bacos.mokengeli.biloko.infrastructure.adapter.OrderNotificationAdapter;
 import com.corundumstudio.socketio.SocketIOServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,7 @@ public class SocketIOTestController {
 
     private final SocketIOServer socketIOServer;
     private final SocketIOEventHandler eventHandler;
-    private final SocketIONotificationAdapter notificationAdapter;
+    private final OrderNotificationAdapter notificationAdapter;
 
     @Value("${socketio.port:9092}")
     private int socketioPort;
@@ -34,7 +34,7 @@ public class SocketIOTestController {
     public SocketIOTestController(
             SocketIOServer socketIOServer,
             SocketIOEventHandler eventHandler,
-            SocketIONotificationAdapter notificationAdapter) {
+            OrderNotificationAdapter notificationAdapter) {
         this.socketIOServer = socketIOServer;
         this.eventHandler = eventHandler;
         this.notificationAdapter = notificationAdapter;
@@ -79,6 +79,10 @@ public class SocketIOTestController {
                 "dish:ready",
                 "payment:update",
                 "validation:required",
+                "debt:validation:required",
+                "debt:validation:approved", 
+                "debt:validation:rejected",
+                "order:closed:with:debt",
                 "tenant:broadcast"
         });
         response.put("connectedClients", socketIOServer.getAllClients().size());
@@ -177,18 +181,128 @@ public class SocketIOTestController {
     }
 
     /**
-     * Changer le mode de migration (pour tests)
+     * Test spécifique des notifications de paiement
      */
-    @PostMapping("/migration-mode")
-    public Map<String, String> changeMigrationMode(
-            @RequestParam SocketIONotificationAdapter.MigrationMode mode) {
+    @PostMapping("/test-payment-notification")
+    public Map<String, Object> testPaymentNotification(
+            @RequestParam String tenantCode,
+            @RequestParam(defaultValue = "1") Long orderId,
+            @RequestParam(defaultValue = "1") Long tableId,
+            @RequestParam(defaultValue = "UNPAID") String previousPaymentStatus,
+            @RequestParam(defaultValue = "FULLY_PAID") String newPaymentStatus) {
 
-        log.warn("⚠️ Changing migration mode to: {}", mode);
-        notificationAdapter.setMigrationMode(mode);
+        log.info("💰 Testing payment notification for tenant: {}", tenantCode);
 
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "changed");
-        response.put("mode", mode.toString());
+        try {
+            OrderNotification notification = OrderNotification.builder()
+                    .orderId(orderId)
+                    .tableId(tableId)
+                    .tenantCode(tenantCode)
+                    .orderStatus(OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE)
+                    .previousState(previousPaymentStatus)
+                    .newState(newPaymentStatus)
+                    .tableState("OCCUPIED")
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            // Test notification via adapter
+            notificationAdapter.notifyWebSocketUser(notification);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "sent");
+            response.put("type", "payment_update");
+            response.put("transport", "Socket.IO");
+            response.put("tenant", tenantCode);
+            response.put("orderId", orderId);
+            response.put("previousPaymentStatus", previousPaymentStatus);
+            response.put("newPaymentStatus", newPaymentStatus);
+            response.put("timestamp", LocalDateTime.now());
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("❌ Error sending payment notification", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return error;
+        }
+    }
+
+    /**
+     * Test spécifique des notifications de validation de dette
+     */
+    @PostMapping("/test-debt-validation-notification")
+    public Map<String, Object> testDebtValidationNotification(
+            @RequestParam String tenantCode,
+            @RequestParam(defaultValue = "1") Long orderId,
+            @RequestParam(defaultValue = "1") Long tableId,
+            @RequestParam(defaultValue = "1") Long validationRequestId,
+            @RequestParam(defaultValue = "DEBT_VALIDATION_REQUIRED") String validationType,
+            @RequestParam(defaultValue = "Validation de dette requise") String message) {
+
+        log.info("💸 Testing debt validation notification for tenant: {}", tenantCode);
+
+        try {
+            OrderNotification.OrderNotificationStatus status;
+            try {
+                status = OrderNotification.OrderNotificationStatus.valueOf(validationType);
+            } catch (IllegalArgumentException e) {
+                status = OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_REQUIRED;
+            }
+
+            OrderNotification notification = OrderNotification.builder()
+                    .orderId(orderId)
+                    .tableId(tableId)
+                    .tenantCode(tenantCode)
+                    .orderStatus(status)
+                    .previousState("PENDING")
+                    .newState("VALIDATION_REQUIRED")
+                    .tableState("OCCUPIED")
+                    .timestamp(LocalDateTime.now())
+                    .message(message)
+                    .validationRequestId(validationRequestId)
+                    .build();
+
+            // Test notification via adapter
+            notificationAdapter.notifyWebSocketUser(notification);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "sent");
+            response.put("type", "debt_validation");
+            response.put("transport", "Socket.IO");
+            response.put("tenant", tenantCode);
+            response.put("orderId", orderId);
+            response.put("validationType", validationType);
+            response.put("validationRequestId", validationRequestId);
+            response.put("message", message);
+            response.put("timestamp", LocalDateTime.now());
+
+            return response;
+
+        } catch (Exception e) {
+            log.error("❌ Error sending debt validation notification", e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "error");
+            error.put("message", e.getMessage());
+            return error;
+        }
+    }
+
+    /**
+     * Endpoint de test générique
+     */
+    @PostMapping("/test-adapter")
+    public Map<String, Object> testAdapter() {
+        log.info("🧪 Testing notification adapter");
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "active");
+        response.put("adapter", "OrderNotificationAdapter");
+        response.put("protocol", "Socket.IO Only");
+        response.put("stats", notificationAdapter.getStats());
+        response.put("timestamp", LocalDateTime.now());
+        
         return response;
     }
 

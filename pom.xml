@@ -118,16 +118,6 @@
             <version>${netty-socketio.version}</version>
         </dependency>
 
-        <!-- ⚠️ TEMPORAIRE: Garder WebSocket Spring pour coexistence -->
-        <!-- À RETIRER après migration complète -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-messaging</artifactId>
-        </dependency>
 
         <!-- API Documentation -->
         <dependency>

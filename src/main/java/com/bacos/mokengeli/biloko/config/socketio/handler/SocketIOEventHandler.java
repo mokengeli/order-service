@@ -543,16 +543,23 @@ public class SocketIOEventHandler {
         String roomName = "tenant:" + tenantCode;
 
         // Formater la notification pour Socket.io
-        Map<String, Object> payload = Map.of(
-                "orderId", notification.getOrderId(),
-                "tableId", notification.getTableId(),
-                "tenantCode", notification.getTenantCode(),
-                "orderStatus", notification.getOrderStatus().toString(),
-                "newState", notification.getNewState(),
-                "previousState", notification.getPreviousState(),
-                "tableState", notification.getTableState(),
-                "timestamp", notification.getTimestamp().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-        );
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("orderId", notification.getOrderId());
+        payload.put("tableId", notification.getTableId());
+        payload.put("tenantCode", notification.getTenantCode());
+        payload.put("orderStatus", notification.getOrderStatus().toString());
+        payload.put("newState", notification.getNewState());
+        payload.put("previousState", notification.getPreviousState());
+        payload.put("tableState", notification.getTableState());
+        payload.put("timestamp", notification.getTimestamp().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        
+        // Ajouter les champs optionnels s'ils existent
+        if (notification.getMessage() != null) {
+            payload.put("message", notification.getMessage());
+        }
+        if (notification.getValidationRequestId() != null) {
+            payload.put("validationRequestId", notification.getValidationRequestId());
+        }
 
         server.getRoomOperations(roomName).sendEvent("order:notification", payload);
 
