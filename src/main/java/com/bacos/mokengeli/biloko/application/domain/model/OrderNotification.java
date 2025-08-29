@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+
 @Data
 @Builder
 public class OrderNotification {
@@ -18,6 +19,8 @@ public class OrderNotification {
     private String tableState; // FREE, OCCUPIED, RESERVED
     private OrderNotificationStatus orderStatus;
     private LocalDateTime timestamp;
+    private String message; // Message additionnel (ex: validation de dette)
+    private Long validationRequestId; // ID de la demande de validation si applicable
 
 
 
@@ -25,6 +28,10 @@ public class OrderNotification {
         NEW_ORDER,
         DISH_UPDATE,
         PAYMENT_UPDATE,
-        TABLE_STATUS_UPDATE
+        TABLE_STATUS_UPDATE,
+        DEBT_VALIDATION_REQUIRED,
+        DEBT_VALIDATION_APPROVED,
+        DEBT_VALIDATION_REJECTED,
+        ORDER_CLOSED_WITH_DEBT
     }
 }

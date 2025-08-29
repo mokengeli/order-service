@@ -35,8 +35,6 @@ socketio:
   worker-threads: 4             # Threads Netty
   cors:
     origins: "*"                # À restreindre en production
-  migration:
-    mode: DUAL                  # STOMP_ONLY, SOCKETIO_ONLY, DUAL
 
 security:
   cors:
@@ -58,14 +56,12 @@ eureka:
 
 management:
   endpoint:
-    websocket:
-      enabled: true
-    socketio:                   # Nouvel endpoint custom
+    socketio:
       enabled: true
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,websocket,socketio
+        include: health,info,metrics,socketio
 
 user:
   service-id: user-service
