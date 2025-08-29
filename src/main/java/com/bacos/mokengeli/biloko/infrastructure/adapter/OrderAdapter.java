@@ -491,21 +491,21 @@ public class OrderAdapter implements OrderPort {
 
         // Notification de clôture avec dette
         this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
-                OrderNotification.OrderNotificationStatus.ORDER_CLOSED_WITH_DEBT, 
-                order.getPaymentStatus().name(), 
-                OrderPaymentStatus.CLOSED_WITH_DEBT.name(),
+                OrderNotification.OrderNotificationStatus.ORDER_CLOSED_WITH_DEBT,
+                order.getPaymentStatus().name(),
+                OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE.name(),
                 TableState.FREE.name(),
                 "Commande clôturée avec impayé" + (validationRequired ? " - Validation requise" : ""),
                 validationRequestId);
 
         // Notification de validation requise si applicable
-        if (validationRequired && validationRequestId != null) {
+      /**  if (validationRequired && validationRequestId != null) {
             this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
                     OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_REQUIRED,
                     "PENDING", "VALIDATION_REQUIRED", TableState.FREE.name(),
                     "Validation de dette requise pour cette commande",
                     validationRequestId);
-        }
+        }*/
 
         return DomainCloseOrderWithDebt.builder()
                 .message("Commande clôturée avec impayé")
@@ -631,11 +631,11 @@ public class OrderAdapter implements OrderPort {
             loss.setCreatedBy(domainUser.getEmployeeNumber());
             loss.setCreatedAt(OffsetDateTime.now());
             financialLossRepository.save(loss);
-            
+
             // Notification de validation approuvée
             this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
                     OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_APPROVED,
-                    "VALIDATION_PENDING", "VALIDATION_APPROVED", 
+                    "VALIDATION_PENDING", "VALIDATION_APPROVED",
                     TableState.FREE.name(),
                     "Votre demande de validation de dette a été approuvée",
                     req.getDebtValidationId());
@@ -653,11 +653,11 @@ public class OrderAdapter implements OrderPort {
             order.setPaymentStatus(OrderPaymentStatus.UNPAID);
 
             orderRepository.save(order);
-            
+
             // Notification de validation refusée
             this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
                     OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_REJECTED,
-                    "VALIDATION_PENDING", "VALIDATION_REJECTED", 
+                    "VALIDATION_PENDING", "VALIDATION_REJECTED",
                     TableState.OCCUPIED.name(),
                     "Votre demande de validation de dette a été refusée",
                     req.getDebtValidationId());
