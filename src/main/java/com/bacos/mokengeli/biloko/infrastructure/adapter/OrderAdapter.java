@@ -16,6 +16,7 @@ import com.bacos.mokengeli.biloko.infrastructure.model.Currency;
 import com.bacos.mokengeli.biloko.infrastructure.repository.*;
 import com.bacos.mokengeli.biloko.infrastructure.repository.proxy.UserProxy;
 import jakarta.transaction.Transactional;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -78,7 +79,7 @@ public class OrderAdapter implements OrderPort {
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No currency found with id " + createOrder.getCurrencyId()));
         RefTable refTable = this.refTableRepository.findById(createOrder.getTableId())
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No Ref table found with the id " + createOrder.getTableId()));
-
+        String requesterEmployeeNumber = this.getRequesterEmployeeNumber(createOrder.getRegisteredBy());
         Order order = Order.builder()
                 .refTable(refTable)
                 .totalPrice(0.0)
@@ -86,12 +87,14 @@ public class OrderAdapter implements OrderPort {
                 .paidAmount(0.0)
                 .paymentStatus(OrderPaymentStatus.UNPAID)
                 .tenant(tenant)
+                .registeredBy(requesterEmployeeNumber)
                 .createdAt(OffsetDateTime.now())
                 .build();
         createAndSetOrderItems(order, currency, createOrder.getOrderItems());
         order = this.orderRepository.save(order);
-
-        return Optional.of(OrderMapper.toDomain(order));
+        DomainOrder domainOrder = OrderMapper.toDomain(order);
+        domainOrder.setWaiterName(this.getRequesterName(createOrder.getRegisteredBy()));
+        return Optional.of(domainOrder);
     }
 
     @Override
@@ -123,11 +126,13 @@ public class OrderAdapter implements OrderPort {
             Order key = entry.getKey();
             List<OrderItem> value = entry.getValue();
             DomainOrder domainOrderWithoutItem = OrderMapper.toDomainOrderWithoutItem(key);
+            domainOrderWithoutItem.setWaiterName(this.getRequesterName(domainOrderWithoutItem.getWaiterIdentifier()));
             List<DomainOrder.DomainOrderItem> orderItems = new ArrayList<>();
             for (OrderItem orderItem : value) {
                 DomainOrder.DomainOrderItem ligthDomainOrderItem = OrderMapper.toDomainOrderItem(orderItem);
                 orderItems.add(ligthDomainOrderItem);
             }
+
             domainOrderWithoutItem.setItems(orderItems);
             domainOrderWithoutItem.sortItemsByCategoryPriority();
             list.add(domainOrderWithoutItem);
@@ -232,7 +237,11 @@ public class OrderAdapter implements OrderPort {
         List<Order> orders = this.orderRepository
                 .findActiveOrdersByRefTableId(refTableId);
         return orders.stream()
-                .map(OrderMapper::toDomain)
+                .map(x -> {
+                    DomainOrder domainOrder = OrderMapper.toDomain(x);
+                    domainOrder.setWaiterName(this.getRequesterName(domainOrder.getWaiterIdentifier()));
+                    return domainOrder;
+                })
                 .toList();
     }
 
@@ -269,7 +278,9 @@ public class OrderAdapter implements OrderPort {
             return Optional.empty();
         }
         Order order = optionalOrder.get();
-        return Optional.of(OrderMapper.toDomain(order));
+        DomainOrder domainOrder = OrderMapper.toDomain(order);
+        domainOrder.setWaiterName(this.getRequesterName(domainOrder.getWaiterIdentifier()));
+        return Optional.of(domainOrder);
     }
 
     private void createAndSetOrderItems(Order order, Currency currency, List<CreateOrderItem> orderItems) throws ServiceException {
@@ -393,7 +404,9 @@ public class OrderAdapter implements OrderPort {
         Order order = this.orderRepository.findByItemId(orderItemId)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                         "No Order found with id = " + orderItemId));
-        return Optional.of(OrderMapper.toDomain(order));
+        DomainOrder domainOrder = OrderMapper.toDomain(order);
+        domainOrder.setWaiterName(this.getRequesterName(domainOrder.getWaiterIdentifier()));
+        return Optional.of(domainOrder);
     }
 
     @Override
@@ -499,13 +512,13 @@ public class OrderAdapter implements OrderPort {
                 validationRequestId);
 
         // Notification de validation requise si applicable
-      /**  if (validationRequired && validationRequestId != null) {
-            this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
-                    OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_REQUIRED,
-                    "PENDING", "VALIDATION_REQUIRED", TableState.FREE.name(),
-                    "Validation de dette requise pour cette commande",
-                    validationRequestId);
-        }*/
+        /**  if (validationRequired && validationRequestId != null) {
+         this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
+         OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_REQUIRED,
+         "PENDING", "VALIDATION_REQUIRED", TableState.FREE.name(),
+         "Validation de dette requise pour cette commande",
+         validationRequestId);
+         }*/
 
         return DomainCloseOrderWithDebt.builder()
                 .message("Commande clôturée avec impayé")
@@ -522,6 +535,7 @@ public class OrderAdapter implements OrderPort {
         domainOrder.setPaymentStatus(order.getPaymentStatus());
         domainOrder.setPaidAmount(order.getPaidAmount());
         domainOrder.setRemainingAmount(order.getRemainingAmount());
+        domainOrder.setWaiterName(this.getRequesterName(domainOrder.getWaiterIdentifier()));
 
         // Mapper les transactions de paiement
         if (order.getPayments() != null) {
@@ -581,10 +595,23 @@ public class OrderAdapter implements OrderPort {
     }
 
     private String getRequesterName(String identifier) {
+        if (Strings.isEmpty(identifier))
+            return "";
         Optional<DomainUser> domainUserOptional = this.userProxy.getUserByIdentifier(identifier);
         if (domainUserOptional.isPresent()) {
             DomainUser domainUser = domainUserOptional.get();
             return domainUser.getFirstName() + " " + domainUser.getLastName();
+        }
+        return "";
+    }
+
+    private String getRequesterEmployeeNumber(String identifier) {
+        if (Strings.isEmpty(identifier))
+            return "";
+        Optional<DomainUser> domainUserOptional = this.userProxy.getUserByIdentifier(identifier);
+        if (domainUserOptional.isPresent()) {
+            DomainUser domainUser = domainUserOptional.get();
+            return domainUser.getEmployeeNumber();
         }
         return "";
     }

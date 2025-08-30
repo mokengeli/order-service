@@ -59,6 +59,9 @@ public class Order {
     @Column(name = "has_pending_validation", nullable = false)
     private boolean hasPendingValidation = false;
 
+    @Column(name = "registered_by")
+    private String registeredBy;
+
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaymentTransaction> payments;

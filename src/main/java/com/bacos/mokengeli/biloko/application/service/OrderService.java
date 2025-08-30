@@ -48,9 +48,10 @@ public class OrderService {
         CreateOrder createOrder = CreateOrder.builder()
                 .tenantCode(tenantCode)
                 .currencyId(currencyId)
-                .employeeNumber(connectedUser.getEmployeeNumber())
+                //.employeeNumber(connectedUser.getEmployeeNumber())
                 .tableId(refTableId)
                 .totalPrice(totalPrice)
+                .registeredBy(connectedUser.getEmployeeNumber())
                 .state(OrderItemState.PENDING)
                 .orderItems(createOrderItems)
                 .build();
@@ -141,8 +142,8 @@ public class OrderService {
                 this.orderPort.prepareOrderItem(orderItemId);
             } else if (OrderItemState.REJECTED.equals(orderItemState)) {
                 // nouveau total, nouveau state
-                this.orderPort.rejectOrderItem( orderItemId);
-            } else  {
+                this.orderPort.rejectOrderItem(orderItemId);
+            } else {
                 this.orderPort.changeOrderItemState(orderItemId, orderItemState);
             }
 
