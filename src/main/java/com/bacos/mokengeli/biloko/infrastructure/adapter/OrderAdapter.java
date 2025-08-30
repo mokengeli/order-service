@@ -704,10 +704,14 @@ public class OrderAdapter implements OrderPort {
 
     @Override
     @Transactional
-    public void rejectOrderItem(Long orderItemId) throws ServiceException {
+    public void rejectOrReturnOrderItem(Long orderItemId, OrderItemState orderItemState) throws ServiceException {
         OrderItem orderItem = this.orderItemRepository.findById(orderItemId).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                 "No OrderItem found with id " + orderItemId));
-        orderItem.setState(OrderItemState.REJECTED);
+        if (!OrderItemState.RETURNED.equals(orderItemState)
+                && !OrderItemState.REJECTED.equals(orderItemState)) {
+            throw new ServiceException(UUID.randomUUID().toString(), "Invalid OrderItemState");
+        }
+        orderItem.setState(orderItemState);
 
         Order order = orderItem.getOrder();
         Double totalPrice = order.getTotalPrice();

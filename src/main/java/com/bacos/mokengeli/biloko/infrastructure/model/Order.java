@@ -105,19 +105,23 @@ public class Order {
         double remainingAmount = getRemainingAmount();
         boolean hasDiscount = payments.stream().anyMatch(p -> p.getDiscountAmount() > 0);
         boolean hasRejectedItems = items.stream().anyMatch(i -> i.getState() == OrderItemState.REJECTED);
+        boolean hasReturnedItems = items.stream().anyMatch(i -> i.getState() == OrderItemState.RETURNED);
 
         if (remainingAmount <= 0.01) { // Tolérance pour erreurs d'arrondi
             if (hasRejectedItems) {
                 paymentStatus = OrderPaymentStatus.PAID_WITH_REJECTED_ITEM;
+            } else if (hasReturnedItems) {
+                paymentStatus = OrderPaymentStatus.PAID_WITH_RETURNED_ITEM;
             } else if (hasDiscount) {
                 paymentStatus = OrderPaymentStatus.PAID_WITH_DISCOUNT;
             } else {
                 paymentStatus = OrderPaymentStatus.FULLY_PAID;
             }
 
-            // Marquer tous les éléments non rejetés comme payés
+            // Marquer tous les éléments non rejetés et non retourné comme payés
             items.forEach(item -> {
-                if (item.getState() != OrderItemState.REJECTED) {
+                if (item.getState() != OrderItemState.REJECTED &&
+                        item.getState() != OrderItemState.RETURNED) {
                     item.setState(OrderItemState.PAID);
                 }
             });
