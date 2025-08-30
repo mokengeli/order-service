@@ -3,7 +3,6 @@ package com.bacos.mokengeli.biloko.application.domain;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -16,7 +15,8 @@ public class DomainOrder {
     private String tenantCode;
     private String tableName;
     private Long tableId;
-    private String employeeNumber;  // Waiter identifier by employee number
+    private String waiterIdentifier;  // Waiter identifier by employee number
+    private String waiterName;  // Waiter identifier by employee number
     private List<DomainOrderItem> items;
     private double totalPrice;
     private DomainCurrency currency;

@@ -81,5 +81,15 @@ public class DishController {
             return dishService.getDishesByCategory(id);
     }
 
+    @GetMapping("/name")
+    public List<DomainDish> getDishesByName(@RequestParam("name") String name,
+                                    @RequestParam("code") String tenantCode) {
+        try {
+            return dishService.getDishesByName(name, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
 
 }
