@@ -19,4 +19,5 @@ public interface DishPort {
 
     Optional<List<DomainDish>> getDishesByCategory(String tenantCode, Long categroyId);
 
+    List<DomainDish> getDishesByName(String name, String tenantCode);
 }
