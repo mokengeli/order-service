@@ -316,13 +316,13 @@ public class OrderAdapter implements OrderPort {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                         "No Order found with id = " + orderId));
-
+        String requesterEmployeeNumber = this.getRequesterEmployeeNumber(employeeNumber);
         // Créer la transaction de paiement
         PaymentTransaction payment = PaymentTransaction.builder()
                 .order(order)
                 .amount(amount)
                 .paymentMethod(paymentMethod)
-                .employeeNumber(employeeNumber)
+                .employeeNumber(requesterEmployeeNumber)
                 .notes(notes)
                 .createdAt(OffsetDateTime.now())
                 .isRefund(false)
@@ -356,13 +356,13 @@ public class OrderAdapter implements OrderPort {
                         "No Payment found with id = " + paymentId));
 
         Order order = payment.getOrder();
-
+        String requesterEmployeeNumber = this.getRequesterEmployeeNumber(employeeNumber);
         // Créer une transaction de remboursement
         PaymentTransaction refund = PaymentTransaction.builder()
                 .order(order)
                 .amount(-payment.getAmount()) // Montant négatif pour un remboursement
                 .paymentMethod(payment.getPaymentMethod())
-                .employeeNumber(employeeNumber)
+                .employeeNumber(requesterEmployeeNumber)
                 .notes("Refund for payment #" + paymentId + ": " + reason)
                 .createdAt(OffsetDateTime.now())
                 .isRefund(true)
@@ -550,12 +550,13 @@ public class OrderAdapter implements OrderPort {
 
     // Méthode helper pour mapper une PaymentTransaction en DomainPaymentTransaction
     private DomainOrder.DomainPaymentTransaction paymentToDomain(PaymentTransaction payment) {
+        String requesterEmployeeNumber = this.getRequesterEmployeeNumber(payment.getEmployeeNumber());
         return DomainOrder.DomainPaymentTransaction.builder()
                 .id(payment.getId())
                 .amount(payment.getAmount())
                 .paymentMethod(payment.getPaymentMethod())
                 .createdAt(payment.getCreatedAt())
-                .employeeNumber(payment.getEmployeeNumber())
+                .employeeNumber(requesterEmployeeNumber)
                 .notes(payment.getNotes())
                 .isRefund(payment.getIsRefund())
                 .discountAmount(payment.getDiscountAmount())

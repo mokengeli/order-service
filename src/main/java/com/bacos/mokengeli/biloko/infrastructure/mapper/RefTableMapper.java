@@ -25,6 +25,7 @@ public class RefTableMapper {
             return null;
         }
         return DomainRefTable.builder()
+                .id(refTable.getId())
                 .name(refTable.getName())
                 .tenantCode(refTable.getTenant().getCode())
                 .createdAt(refTable.getCreatedAt())

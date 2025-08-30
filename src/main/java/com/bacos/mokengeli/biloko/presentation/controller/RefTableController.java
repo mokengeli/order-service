@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/order/table")
 public class RefTableController {
@@ -61,6 +63,19 @@ public class RefTableController {
             @RequestParam("code") String tenantCode) {
         try {
             return refTableService.getRefTableById(id, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
+    @GetMapping("/name")
+    public List<DomainRefTable> getTablesByName(
+            @RequestParam("name") String name,
+            @RequestParam("code") String tenantCode) {
+        try {
+            return refTableService.getRefTablesByName(name, tenantCode);
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(
                     HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
