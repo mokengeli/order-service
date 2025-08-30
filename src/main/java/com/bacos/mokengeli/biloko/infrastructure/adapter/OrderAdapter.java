@@ -720,4 +720,15 @@ public class OrderAdapter implements OrderPort {
         order.setTotalPrice(adjustedTotalPrice);
         this.orderItemRepository.save(orderItem);
     }
+
+    @Override
+    public void forceCloseOrder(Long orderId) {
+        Optional<Order> optionalOrder = this.orderRepository.findById(orderId);
+        if (optionalOrder.isEmpty()) {
+            return;
+        }
+        Order order = optionalOrder.get();
+        order.setPaymentStatus(OrderPaymentStatus.FORCED_CLOSED);
+        this.orderRepository.save(order);
+    }
 }

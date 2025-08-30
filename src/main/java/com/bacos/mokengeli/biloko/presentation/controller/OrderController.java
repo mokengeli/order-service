@@ -127,4 +127,14 @@ public class OrderController {
         }
     }
 
+    @PutMapping("/force-close")
+    public void closeOrder(@RequestParam("id") Long id) {
+        try {
+          this.orderService.forceCloseOrder(id);
+
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
 }

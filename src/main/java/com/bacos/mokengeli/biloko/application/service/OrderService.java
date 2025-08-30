@@ -274,4 +274,42 @@ public class OrderService {
         }
         return orderPort.processDebtValidation(req, connectedUser.getEmployeeNumber());
     }
+
+    public void forceCloseOrder(Long orderId) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        boolean orderBelongToTenant = this.orderPort.isOrderBelongToTenant(orderId, connectedUser.getTenantCode());
+        if (!orderBelongToTenant) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to close order of another tenant code order Id = [{}]", errorId,
+                    connectedUser.getEmployeeNumber(), orderId);
+            throw new ServiceException(errorId, "You don't have the right to get this order.");
+        }
+        Optional<DomainOrder> order = this.orderPort.getOrder(orderId);
+        DomainOrder domainOrder = order.get();
+        Long refTableId = domainOrder.getTableId();
+
+
+        boolean canForceClose = canForceCloseOrder(domainOrder);
+        if (!canForceClose) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to close order  Id = [{}]. But it's not in acceptable state", errorId,
+                    connectedUser.getEmployeeNumber(), orderId);
+            throw new ServiceException(errorId, "This action can be made because order is not in acceptable state");
+        }
+        orderPort.forceCloseOrder(orderId);
+        this.orderNotificationService.notifyStateChange(order.get().getId(), refTableId,
+                OrderNotification.OrderNotificationStatus.TABLE_STATUS_UPDATE,
+                "", OrderItemState.PAID.name(), TableState.FREE.name());
+    }
+
+    private boolean canForceCloseOrder(DomainOrder domainOrder) {
+
+        for (DomainOrder.DomainOrderItem orderItem : domainOrder.getItems()) {
+            OrderItemState state = orderItem.getState();
+            if (state != OrderItemState.REJECTED && state != OrderItemState.RETURNED) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
