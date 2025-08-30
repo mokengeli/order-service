@@ -140,9 +140,10 @@ public class OrderService {
 
             if (OrderItemState.READY.equals(orderItemState)) {
                 this.orderPort.prepareOrderItem(orderItemId);
-            } else if (OrderItemState.REJECTED.equals(orderItemState)) {
+            } else if (OrderItemState.REJECTED.equals(orderItemState) ||
+                    OrderItemState.RETURNED.equals(orderItemState)) {
                 // nouveau total, nouveau state
-                this.orderPort.rejectOrderItem(orderItemId);
+                this.orderPort.rejectOrReturnOrderItem(orderItemId, orderItemState);
             } else {
                 this.orderPort.changeOrderItemState(orderItemId, orderItemState);
             }
