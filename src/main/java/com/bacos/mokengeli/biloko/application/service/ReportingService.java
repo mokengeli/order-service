@@ -2,6 +2,7 @@
 package com.bacos.mokengeli.biloko.application.service;
 
 
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainDailyDishReport;
 import com.bacos.mokengeli.biloko.application.domain.model.ConnectedUser;
 import com.bacos.mokengeli.biloko.application.domain.report.DomainDailyHourlyStat;
 import com.bacos.mokengeli.biloko.application.domain.report.DomainDailyRevenueStat;
@@ -21,11 +22,13 @@ public class ReportingService {
 
     private final ReportingPort reportingPort;
     private final UserAppService userAppService;
+    private final DashboardService dashboardService;
 
     @Autowired
-    public ReportingService(ReportingPort reportingPort, UserAppService userAppService) {
+    public ReportingService(ReportingPort reportingPort, UserAppService userAppService, DashboardService dashboardService) {
         this.reportingPort = reportingPort;
         this.userAppService = userAppService;
+        this.dashboardService = dashboardService;
     }
 
     public List<DomainDailyRevenueStat> fetchDailyRevenue(
@@ -58,6 +61,21 @@ public class ReportingService {
             throw new ServiceException(uuid, "Accès refusé pour ce tenant");
         }
         return reportingPort.getDailyHourlyMatrix(start, end, tenantCode);
+    }
+
+    public DomainDailyDishReport fetchDailyDishReport(
+            LocalDate date,
+            String tenantCode
+    ) throws ServiceException {
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get the fetchDailyDishReport of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardService.getDailyDishReport(date, tenantCode);
     }
 
 }

@@ -1,5 +1,7 @@
 package com.bacos.mokengeli.biloko.presentation.controller;
 
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainDailyDishReport;
+import com.bacos.mokengeli.biloko.application.domain.dashboard.DomainDishSummary;
 import com.bacos.mokengeli.biloko.application.domain.report.DomainDailyHourlyStat;
 import com.bacos.mokengeli.biloko.application.domain.report.DomainDailyRevenueStat;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
@@ -109,6 +111,59 @@ public class ReportingController {
                             row.getCurrencyCode()
                     );
                 }
+            }
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
+
+    @GetMapping("/daily-dish-report")
+    public void exportDailyDishReportCsv(
+            @RequestParam("date")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam("tenantCode") String tenantCode,
+            HttpServletResponse response
+    ) throws Exception {
+        try {
+            String tenantName = tenantService.getTenantName(tenantCode);
+            DomainDailyDishReport report = reportingService.fetchDailyDishReport(date, tenantCode);
+
+            // Configure la réponse HTTP pour un CSV téléchargeable
+            response.setContentType("text/csv");
+            String filename = String.format("rapport_plats_quotidien_%s_%s.csv", tenantName, date);
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+            // Écriture CSV
+            try (PrintWriter writer = response.getWriter()) {
+                writer.println("DishId;DishName;Categories;QuantityServed;UnitPrice;TotalAmount;Currency");
+                
+                String currencyCode = report.getCurrency() != null ? report.getCurrency().getCode() : "";
+                
+                for (DomainDishSummary dish : report.getDishSummaries()) {
+                    String categories = dish.getCategories() != null ? 
+                            String.join("|", dish.getCategories()) : "";
+                    
+                    writer.printf(
+                            "%d;%s;%s;%d;%.2f;%.2f;%s%n",
+                            dish.getDishId(),
+                            dish.getDishName().replace(";", ","), // Échapper les points-virgules
+                            categories.replace(";", ","),
+                            dish.getQuantityServed(),
+                            dish.getUnitPrice(),
+                            dish.getTotalAmount(),
+                            currencyCode
+                    );
+                }
+                
+                // Ligne de totaux
+                writer.printf(
+                        "TOTAL;-;-;%d;-;%.2f;%s%n",
+                        report.getTotalDishesCount(),
+                        report.getTotalAmount(),
+                        currencyCode
+                );
             }
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(
