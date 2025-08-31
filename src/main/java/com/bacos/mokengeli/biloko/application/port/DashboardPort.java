@@ -54,4 +54,9 @@ public interface DashboardPort {
             LocalDate endDate,
             String tenantCode
     );
+
+    DomainDailyDishReport getDailyDishReport(
+            LocalDate date,
+            String tenantCode
+    );
 }

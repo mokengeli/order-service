@@ -3,6 +3,7 @@ package com.bacos.mokengeli.biloko.infrastructure.adapter;
 import com.bacos.mokengeli.biloko.application.domain.DomainCurrency;
 import com.bacos.mokengeli.biloko.application.domain.DomainOrder;
 import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
+import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
 import com.bacos.mokengeli.biloko.application.domain.dashboard.*;
 import com.bacos.mokengeli.biloko.application.port.DashboardPort;
 import com.bacos.mokengeli.biloko.application.utils.DateUtils;
@@ -17,9 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.*;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -282,7 +281,7 @@ public class DashboardAdapter implements DashboardPort {
     ) {
         // bornes UTC sur la journée
         OffsetDateTime start = DateUtils.startOfDay(startDate);
-        OffsetDateTime end   = DateUtils.endOfDay(endDate);
+        OffsetDateTime end = DateUtils.endOfDay(endDate);
 
         // requête groupée en base
         List<OrderRepository.PaymentStatusCountProjection> rows =
@@ -297,6 +296,136 @@ public class DashboardAdapter implements DashboardPort {
                         p.getCount()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public DomainDailyDishReport getDailyDishReport(LocalDate date, String tenantCode) {
+        OffsetDateTime startOfDay = DateUtils.startOfDay(date);
+        OffsetDateTime endOfDay = DateUtils.endOfDay(date);
+
+        // 1) Récupérer les commandes terminées (payées) pour la date
+        List<OrderPaymentStatus> paidStatuses = OrderPaymentStatus.getAllPaidStatus();
+        List<Order> paidOrders = orderRepository.findByCreatedAtBetweenAndTenantCodeAndPaymentStatusIn(
+                startOfDay, endOfDay, tenantCode, paidStatuses
+        );
+
+        if (paidOrders.isEmpty()) {
+            return new DomainDailyDishReport(date, List.of(), 0, 0.0, null);
+        }
+
+        // 2) Pour chaque commande, récupérer les items selon la logique métier
+        Map<String, DishAggregation> dishAggregations = new HashMap<>();
+        int totalDishesCount = 0;
+        double totalAmount = 0.0;
+        DomainCurrency currency = null;
+
+        for (Order order : paidOrders) {
+            List<OrderItem> eligibleItems;
+
+            if (order.getPaymentStatus() == OrderPaymentStatus.FULLY_PAID) {
+                // Pour FULLY_PAID: tous les items sauf REJECTED et RETURNED
+                eligibleItems = order.getItems().stream()
+                        .filter(item -> item.getState() != OrderItemState.REJECTED &&
+                                item.getState() != OrderItemState.RETURNED)
+                        .collect(Collectors.toList());
+            } else {
+                // Pour autres statuts payés: uniquement les items explicitement PAID
+                eligibleItems = order.getItems().stream()
+                        .filter(item -> item.getState() == OrderItemState.PAID)
+                        .collect(Collectors.toList());
+            }
+
+            // Agréger les données par plat
+            for (OrderItem item : eligibleItems) {
+                String dishKey = item.getDish().getId().toString();
+                
+                // Récupérer les catégories depuis Dish -> DishCategories -> Category -> name
+                List<String> categoryNames = item.getDish().getDishCategories().stream()
+                        .map(dishCategory -> dishCategory.getCategory().getName())
+                        .collect(Collectors.toList());
+                
+                DishAggregation aggregation = dishAggregations.computeIfAbsent(dishKey,
+                        k -> new DishAggregation(item.getDish().getId(), item.getDish().getName(), categoryNames));
+
+                // Compter 1 occurrence de ce plat (chaque OrderItem = 1 plat commandé)
+                aggregation.addItem(1, item.getUnitPrice());
+                totalDishesCount += 1;
+                totalAmount += item.getUnitPrice();
+            }
+
+            // Récupérer la devise depuis la première commande
+            if (currency == null && order.getCurrency() != null) {
+                currency = DomainCurrency.builder()
+                        .id(order.getCurrency().getId())
+                        .code(order.getCurrency().getCode())
+                        .label(order.getCurrency().getLabel())
+                        .build();
+            }
+        }
+
+        // 3) Convertir les agrégations en DomainDishSummary
+        List<DomainDishSummary> dishSummaries = dishAggregations.values().stream()
+                .map(agg -> new DomainDishSummary(
+                        agg.getDishId(),
+                        agg.getDishName(),
+                        agg.getQuantity(),
+                        agg.getUnitPrice(),
+                        agg.getTotalAmount(),
+                        agg.getCategories()
+                ))
+                .sorted((a, b) -> b.getQuantityServed() - a.getQuantityServed()) // Trier par quantité décroissante
+                .collect(Collectors.toList());
+
+        return new DomainDailyDishReport(date, dishSummaries, totalDishesCount, totalAmount, currency);
+    }
+
+    // Classe helper pour l'agrégation
+    private static class DishAggregation {
+        private final Long dishId;
+        private final String dishName;
+        private final List<String> categories;
+        private int quantity = 0;
+        private double totalAmount = 0.0;
+        private double unitPrice = 0.0; // Prix unitaire (sera défini au premier item)
+
+        public DishAggregation(Long dishId, String dishName, List<String> categories) {
+            this.dishId = dishId;
+            this.dishName = dishName;
+            this.categories = categories != null ? categories : List.of();
+        }
+
+        public void addItem(int count, double amount) {
+            // Définir le prix unitaire au premier item (on assume que tous les items du même plat ont le même prix)
+            if (this.quantity == 0 && count > 0) {
+                this.unitPrice = amount / count;
+            }
+            this.quantity += count;
+            this.totalAmount += amount;
+        }
+
+        public Long getDishId() {
+            return dishId;
+        }
+
+        public String getDishName() {
+            return dishName;
+        }
+
+        public List<String> getCategories() {
+            return categories;
+        }
+
+        public int getQuantity() {
+            return quantity;
+        }
+
+        public double getUnitPrice() {
+            return unitPrice;
+        }
+
+        public double getTotalAmount() {
+            return totalAmount;
+        }
     }
 
 }
