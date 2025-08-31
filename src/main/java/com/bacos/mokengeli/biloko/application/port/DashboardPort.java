@@ -59,4 +59,10 @@ public interface DashboardPort {
             LocalDate date,
             String tenantCode
     );
+
+    DomainWaiterPerformanceReport getWaiterPerformance(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    );
 }

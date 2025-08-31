@@ -184,4 +184,19 @@ public class DashboardController {
             );
         }
     }
+
+    @GetMapping("/waiter-performance")
+    public DomainWaiterPerformanceReport getWaiterPerformance(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam String tenantCode
+    ) {
+        try {
+            return dashboardService.getWaiterPerformance(startDate, endDate, tenantCode);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(
+                    HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId()
+            );
+        }
+    }
 }

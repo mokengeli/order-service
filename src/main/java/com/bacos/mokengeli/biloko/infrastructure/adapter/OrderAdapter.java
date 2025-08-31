@@ -595,7 +595,7 @@ public class OrderAdapter implements OrderPort {
         }).collect(Collectors.toList());
     }
 
-    private String getRequesterName(String identifier) {
+    public String getRequesterName(String identifier) {
         if (Strings.isEmpty(identifier))
             return "";
         Optional<DomainUser> domainUserOptional = this.userProxy.getUserByIdentifier(identifier);
@@ -606,7 +606,7 @@ public class OrderAdapter implements OrderPort {
         return "";
     }
 
-    private String getRequesterEmployeeNumber(String identifier) {
+    public String getRequesterEmployeeNumber(String identifier) {
         if (Strings.isEmpty(identifier))
             return "";
         Optional<DomainUser> domainUserOptional = this.userProxy.getUserByIdentifier(identifier);
