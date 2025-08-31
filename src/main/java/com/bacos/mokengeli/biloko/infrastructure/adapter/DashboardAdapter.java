@@ -30,11 +30,13 @@ public class DashboardAdapter implements DashboardPort {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ZoneId systemZone = ZoneId.systemDefault();
+    private final OrderAdapter orderAdapter;
 
     @Autowired
-    public DashboardAdapter(OrderRepository orderRepository, OrderItemRepository orderItemRepository) {
+    public DashboardAdapter(OrderRepository orderRepository, OrderItemRepository orderItemRepository, OrderAdapter orderAdapter) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
+        this.orderAdapter = orderAdapter;
     }
 
     @Override
@@ -338,12 +340,12 @@ public class DashboardAdapter implements DashboardPort {
             // Agréger les données par plat
             for (OrderItem item : eligibleItems) {
                 String dishKey = item.getDish().getId().toString();
-                
+
                 // Récupérer les catégories depuis Dish -> DishCategories -> Category -> name
                 List<String> categoryNames = item.getDish().getDishCategories().stream()
                         .map(dishCategory -> dishCategory.getCategory().getName())
                         .collect(Collectors.toList());
-                
+
                 DishAggregation aggregation = dishAggregations.computeIfAbsent(dishKey,
                         k -> new DishAggregation(item.getDish().getId(), item.getDish().getName(), categoryNames));
 
@@ -377,6 +379,70 @@ public class DashboardAdapter implements DashboardPort {
                 .collect(Collectors.toList());
 
         return new DomainDailyDishReport(date, dishSummaries, totalDishesCount, totalAmount, currency);
+    }
+
+    @Override
+    public DomainWaiterPerformanceReport getWaiterPerformance(LocalDate startDate, LocalDate endDate, String tenantCode) {
+        OffsetDateTime startOfPeriod = DateUtils.startOfDay(startDate);
+        OffsetDateTime endOfPeriod = DateUtils.endOfDay(endDate);
+
+        // Récupérer les commandes payées pour la période
+        List<OrderPaymentStatus> paidStatuses = OrderPaymentStatus.getAllPaidStatus();
+        List<Order> paidOrders = orderRepository.findByCreatedAtBetweenAndTenantCodeAndPaymentStatusIn(
+                startOfPeriod, endOfPeriod, tenantCode, paidStatuses
+        );
+
+        if (paidOrders.isEmpty()) {
+            return new DomainWaiterPerformanceReport(startDate, endDate, List.of(), 0, 0.0);
+        }
+
+        // Grouper par serveur et calculer les métriques
+        Map<String, WaiterAggregation> waiterAggregations = new HashMap<>();
+        int totalOrders = 0;
+        double totalRevenue = 0.0;
+
+        for (Order order : paidOrders) {
+            String waiterKey = order.getRegisteredBy();
+            if (waiterKey == null || waiterKey.trim().isEmpty()) {
+                continue; // Ignorer les commandes sans serveur assigné
+            }
+
+            String requesterName = this.orderAdapter.getRequesterName(order.getRegisteredBy());
+            WaiterAggregation aggregation = waiterAggregations.computeIfAbsent(waiterKey,
+                    k -> new WaiterAggregation(order.getRegisteredBy(), requesterName));
+
+            // Compter les items éligibles selon la même logique que le rapport journalier
+            int itemsCount = 0;
+            if (order.getPaymentStatus() == OrderPaymentStatus.FULLY_PAID) {
+                itemsCount = (int) order.getItems().stream()
+                        .filter(item -> item.getState() != OrderItemState.REJECTED &&
+                                item.getState() != OrderItemState.RETURNED)
+                        .count();
+            } else {
+                itemsCount = (int) order.getItems().stream()
+                        .filter(item -> item.getState() == OrderItemState.PAID)
+                        .count();
+            }
+
+            aggregation.addOrder(order.getPaidAmount(), itemsCount);
+            totalOrders++;
+            totalRevenue += order.getPaidAmount();
+        }
+
+        // Convertir en DomainWaiterPerformance et trier par nombre de commandes
+        List<DomainWaiterPerformance> waiterStats = waiterAggregations.values().stream()
+                .map(agg -> new DomainWaiterPerformance(
+                        agg.getWaiterIdentifier(),
+                        agg.getWaiterName(),
+                        agg.getOrdersCount(),
+                        agg.getTotalRevenue(),
+                        agg.getAverageOrderValue(),
+                        agg.getTotalItemsServed()
+                ))
+                .sorted((a, b) -> Integer.compare(b.getOrdersCount(), a.getOrdersCount())) // Tri par nombre de commandes décroissant
+                .collect(Collectors.toList());
+
+        return new DomainWaiterPerformanceReport(startDate, endDate, waiterStats, totalOrders, totalRevenue);
     }
 
     // Classe helper pour l'agrégation
@@ -425,6 +491,50 @@ public class DashboardAdapter implements DashboardPort {
 
         public double getTotalAmount() {
             return totalAmount;
+        }
+    }
+
+    // Classe helper pour l'agrégation des serveurs
+    private static class WaiterAggregation {
+        private final String waiterIdentifier;
+        private final String waiterName;
+        private int ordersCount = 0;
+        private double totalRevenue = 0.0;
+        private int totalItemsServed = 0;
+
+        public WaiterAggregation(String waiterIdentifier, String waiterName) {
+            this.waiterIdentifier = waiterIdentifier;
+            this.waiterName = waiterName != null ? waiterName : "";
+        }
+
+        public void addOrder(double orderRevenue, int itemsCount) {
+            this.ordersCount++;
+            this.totalRevenue += orderRevenue;
+            this.totalItemsServed += itemsCount;
+        }
+
+        public String getWaiterIdentifier() {
+            return waiterIdentifier;
+        }
+
+        public String getWaiterName() {
+            return waiterName;
+        }
+
+        public int getOrdersCount() {
+            return ordersCount;
+        }
+
+        public double getTotalRevenue() {
+            return totalRevenue;
+        }
+
+        public int getTotalItemsServed() {
+            return totalItemsServed;
+        }
+
+        public double getAverageOrderValue() {
+            return ordersCount > 0 ? totalRevenue / ordersCount : 0.0;
         }
     }
 
