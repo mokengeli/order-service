@@ -126,10 +126,10 @@ public class CashierAdapter implements CashierPort {
             String search
     ) {
         if ("TABLE".equals(searchType)) {
-            // Search by table name (case insensitive)
+            // Search by table name (case insensitive, starts with)
             return orders.stream()
                     .filter(order -> order.getTableName() != null && 
-                            order.getTableName().equalsIgnoreCase(search.trim()))
+                            order.getTableName().toLowerCase().startsWith(search.trim().toLowerCase()))
                     .collect(Collectors.toList());
         } else if ("ORDER".equals(searchType)) {
             // Search by order ID
