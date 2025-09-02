@@ -11,6 +11,7 @@ import java.util.List;
 public class CreateOrder {
 
     private String tenantCode;
+    private String orderNumber;
     private String tableName;
     private Long tableId;
     //private String employeeNumber;

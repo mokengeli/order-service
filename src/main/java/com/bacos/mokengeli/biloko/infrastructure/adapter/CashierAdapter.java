@@ -132,16 +132,11 @@ public class CashierAdapter implements CashierPort {
                             order.getTableName().toLowerCase().startsWith(search.trim().toLowerCase()))
                     .collect(Collectors.toList());
         } else if ("ORDER".equals(searchType)) {
-            // Search by order ID
-            try {
-                Long searchOrderId = Long.parseLong(search.trim());
-                return orders.stream()
-                        .filter(order -> order.getOrderId().equals(searchOrderId))
-                        .collect(Collectors.toList());
-            } catch (NumberFormatException e) {
-                // If search is not a valid number, return empty list
-                return List.of();
-            }
+            // Search by order number (new robust system)
+            return orders.stream()
+                    .filter(order -> order.getOrderNumber() != null && 
+                            order.getOrderNumber().startsWith(search.trim()))
+                    .collect(Collectors.toList());
         }
         // If searchType is not recognized, return all orders
         return orders;
@@ -212,6 +207,7 @@ public class CashierAdapter implements CashierPort {
 
         return DomainCashierOrderSummary.DomainCashierOrder.builder()
                 .orderId(order.getId())
+                .orderNumber(order.getOrderNumber()) // Ajout du nouveau champ
                 .tableId(order.getRefTable() != null ? order.getRefTable().getId() : null)
                 .tableName(order.getRefTable() != null ? order.getRefTable().getName() : "N/A")
                 .totalAmount(order.getTotalPrice())

@@ -12,6 +12,7 @@ import java.util.Map;
 @Data
 public class DomainOrder {
     private Long id;
+    private String orderNumber;
     private String tenantCode;
     private String tableName;
     private Long tableId;

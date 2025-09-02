@@ -18,6 +18,7 @@ public class DomainCashierOrderSummary {
     @Data
     public static class DomainCashierOrder {
         private Long orderId;
+        private String orderNumber;
         private Long tableId;
         private String tableName;
         private double totalAmount;
