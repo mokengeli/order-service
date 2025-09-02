@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -25,6 +26,9 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "order_number", length = 10, nullable = false)
+    private String orderNumber;
 
     @Column(name = "total_price", nullable = false)
     private Double totalPrice;
@@ -45,6 +49,9 @@ public class Order {
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
+
+    @Column(name = "created_date", insertable = false, updatable = false)
+    private LocalDate createdDate; // Maintenue automatiquement par trigger PostgreSQL
 
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;

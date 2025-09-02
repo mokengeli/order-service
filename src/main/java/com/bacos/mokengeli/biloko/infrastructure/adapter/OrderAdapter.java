@@ -81,6 +81,7 @@ public class OrderAdapter implements OrderPort {
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No Ref table found with the id " + createOrder.getTableId()));
         String requesterEmployeeNumber = this.getRequesterEmployeeNumber(createOrder.getRegisteredBy());
         Order order = Order.builder()
+                .orderNumber(createOrder.getOrderNumber())
                 .refTable(refTable)
                 .totalPrice(0.0)
                 .currency(currency)

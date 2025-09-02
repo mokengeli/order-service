@@ -20,13 +20,15 @@ public class OrderService {
     private final UserAppService userAppService;
     private final DishPort dishPort;
     private final OrderNotificationService orderNotificationService;
+    private final OrderNumberService orderNumberService;
 
     @Autowired
-    public OrderService(OrderPort orderPort, UserAppService userAppService, DishPort dishPort, OrderNotificationService orderNotificationService) {
+    public OrderService(OrderPort orderPort, UserAppService userAppService, DishPort dishPort, OrderNotificationService orderNotificationService, OrderNumberService orderNumberService) {
         this.orderPort = orderPort;
         this.userAppService = userAppService;
         this.dishPort = dishPort;
         this.orderNotificationService = orderNotificationService;
+        this.orderNumberService = orderNumberService;
     }
 
     public DomainOrder createOrder(Long currencyId, Long refTableId, List<CreateOrderItem> createOrderItems) throws ServiceException {
@@ -44,11 +46,14 @@ public class OrderService {
             throw new ServiceException(errorId, "Table must belong to your company");
         }
 
+        // Génère le numéro de commande
+        String orderNumber = orderNumberService.generateOrderNumber(tenantCode);
+        
         double totalPrice = getTotalPrice(connectedUser, createOrderItems);
         CreateOrder createOrder = CreateOrder.builder()
                 .tenantCode(tenantCode)
                 .currencyId(currencyId)
-                //.employeeNumber(connectedUser.getEmployeeNumber())
+                .orderNumber(orderNumber)
                 .tableId(refTableId)
                 .totalPrice(totalPrice)
                 .registeredBy(connectedUser.getEmployeeNumber())
