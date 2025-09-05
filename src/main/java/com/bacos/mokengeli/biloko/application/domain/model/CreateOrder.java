@@ -11,12 +11,14 @@ import java.util.List;
 public class CreateOrder {
 
     private String tenantCode;
+    private String orderNumber;
     private String tableName;
     private Long tableId;
-    private String employeeNumber;
+    //private String employeeNumber;
     private Long currencyId;
     private List<CreateOrderItem> orderItems;
     private OrderItemState state;
     private double totalPrice;
+    private String registeredBy;
 
 }

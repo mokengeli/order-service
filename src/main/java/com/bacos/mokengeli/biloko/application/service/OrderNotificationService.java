@@ -36,6 +36,28 @@ public class OrderNotificationService {
                 .orderStatus(orderNotificationStatus)
                 .tableState(tableState)
                 .timestamp(LocalDateTime.now())
+                .message(additionnalInfo)
+                .build();
+        this.orderNotification.notifyWebSocketUser(notification);
+    }
+
+    public void notifyDebtValidation(Long orderId, Long tableId, OrderNotification.OrderNotificationStatus orderNotificationStatus,
+                                   String previousState, String newState, String tableState, 
+                                   String message, Long validationRequestId) {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+
+        String tenantCode = connectedUser.getTenantCode();
+        OrderNotification notification = OrderNotification.builder()
+                .orderId(orderId)
+                .tableId(tableId)
+                .previousState(previousState)
+                .newState(newState)
+                .tenantCode(tenantCode)
+                .orderStatus(orderNotificationStatus)
+                .tableState(tableState)
+                .timestamp(LocalDateTime.now())
+                .message(message)
+                .validationRequestId(validationRequestId)
                 .build();
         this.orderNotification.notifyWebSocketUser(notification);
     }

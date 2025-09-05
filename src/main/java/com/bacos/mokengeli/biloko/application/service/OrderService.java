@@ -20,13 +20,15 @@ public class OrderService {
     private final UserAppService userAppService;
     private final DishPort dishPort;
     private final OrderNotificationService orderNotificationService;
+    private final OrderNumberService orderNumberService;
 
     @Autowired
-    public OrderService(OrderPort orderPort, UserAppService userAppService, DishPort dishPort, OrderNotificationService orderNotificationService) {
+    public OrderService(OrderPort orderPort, UserAppService userAppService, DishPort dishPort, OrderNotificationService orderNotificationService, OrderNumberService orderNumberService) {
         this.orderPort = orderPort;
         this.userAppService = userAppService;
         this.dishPort = dishPort;
         this.orderNotificationService = orderNotificationService;
+        this.orderNumberService = orderNumberService;
     }
 
     public DomainOrder createOrder(Long currencyId, Long refTableId, List<CreateOrderItem> createOrderItems) throws ServiceException {
@@ -44,13 +46,17 @@ public class OrderService {
             throw new ServiceException(errorId, "Table must belong to your company");
         }
 
+        // Génère le numéro de commande
+        String orderNumber = orderNumberService.generateOrderNumber(tenantCode);
+        
         double totalPrice = getTotalPrice(connectedUser, createOrderItems);
         CreateOrder createOrder = CreateOrder.builder()
                 .tenantCode(tenantCode)
                 .currencyId(currencyId)
-                .employeeNumber(connectedUser.getEmployeeNumber())
+                .orderNumber(orderNumber)
                 .tableId(refTableId)
                 .totalPrice(totalPrice)
+                .registeredBy(connectedUser.getEmployeeNumber())
                 .state(OrderItemState.PENDING)
                 .orderItems(createOrderItems)
                 .build();
@@ -139,10 +145,11 @@ public class OrderService {
 
             if (OrderItemState.READY.equals(orderItemState)) {
                 this.orderPort.prepareOrderItem(orderItemId);
-            } else if (OrderItemState.REJECTED.equals(orderItemState)) {
+            } else if (OrderItemState.REJECTED.equals(orderItemState) ||
+                    OrderItemState.RETURNED.equals(orderItemState)) {
                 // nouveau total, nouveau state
-                this.orderPort.rejectOrderItem( orderItemId);
-            } else  {
+                this.orderPort.rejectOrReturnOrderItem(orderItemId, orderItemState);
+            } else {
                 this.orderPort.changeOrderItemState(orderItemId, orderItemState);
             }
 
@@ -271,5 +278,43 @@ public class OrderService {
 
         }
         return orderPort.processDebtValidation(req, connectedUser.getEmployeeNumber());
+    }
+
+    public void forceCloseOrder(Long orderId) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        boolean orderBelongToTenant = this.orderPort.isOrderBelongToTenant(orderId, connectedUser.getTenantCode());
+        if (!orderBelongToTenant) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to close order of another tenant code order Id = [{}]", errorId,
+                    connectedUser.getEmployeeNumber(), orderId);
+            throw new ServiceException(errorId, "You don't have the right to get this order.");
+        }
+        Optional<DomainOrder> order = this.orderPort.getOrder(orderId);
+        DomainOrder domainOrder = order.get();
+        Long refTableId = domainOrder.getTableId();
+
+
+        boolean canForceClose = canForceCloseOrder(domainOrder);
+        if (!canForceClose) {
+            String errorId = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] try to close order  Id = [{}]. But it's not in acceptable state", errorId,
+                    connectedUser.getEmployeeNumber(), orderId);
+            throw new ServiceException(errorId, "This action can be made because order is not in acceptable state");
+        }
+        orderPort.forceCloseOrder(orderId);
+        this.orderNotificationService.notifyStateChange(order.get().getId(), refTableId,
+                OrderNotification.OrderNotificationStatus.TABLE_STATUS_UPDATE,
+                "", OrderItemState.PAID.name(), TableState.FREE.name());
+    }
+
+    private boolean canForceCloseOrder(DomainOrder domainOrder) {
+
+        for (DomainOrder.DomainOrderItem orderItem : domainOrder.getItems()) {
+            OrderItemState state = orderItem.getState();
+            if (state != OrderItemState.REJECTED && state != OrderItemState.RETURNED) {
+                return false;
+            }
+        }
+        return true;
     }
 }

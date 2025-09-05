@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -25,6 +26,9 @@ public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "order_number", length = 10, nullable = false)
+    private String orderNumber;
 
     @Column(name = "total_price", nullable = false)
     private Double totalPrice;
@@ -46,6 +50,9 @@ public class Order {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
+    @Column(name = "created_date", insertable = false, updatable = false)
+    private LocalDate createdDate; // Maintenue automatiquement par trigger PostgreSQL
+
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
@@ -58,6 +65,9 @@ public class Order {
 
     @Column(name = "has_pending_validation", nullable = false)
     private boolean hasPendingValidation = false;
+
+    @Column(name = "registered_by")
+    private String registeredBy;
 
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -102,19 +112,23 @@ public class Order {
         double remainingAmount = getRemainingAmount();
         boolean hasDiscount = payments.stream().anyMatch(p -> p.getDiscountAmount() > 0);
         boolean hasRejectedItems = items.stream().anyMatch(i -> i.getState() == OrderItemState.REJECTED);
+        boolean hasReturnedItems = items.stream().anyMatch(i -> i.getState() == OrderItemState.RETURNED);
 
         if (remainingAmount <= 0.01) { // Tolérance pour erreurs d'arrondi
             if (hasRejectedItems) {
                 paymentStatus = OrderPaymentStatus.PAID_WITH_REJECTED_ITEM;
+            } else if (hasReturnedItems) {
+                paymentStatus = OrderPaymentStatus.PAID_WITH_RETURNED_ITEM;
             } else if (hasDiscount) {
                 paymentStatus = OrderPaymentStatus.PAID_WITH_DISCOUNT;
             } else {
                 paymentStatus = OrderPaymentStatus.FULLY_PAID;
             }
 
-            // Marquer tous les éléments non rejetés comme payés
+            // Marquer tous les éléments non rejetés et non retourné comme payés
             items.forEach(item -> {
-                if (item.getState() != OrderItemState.REJECTED) {
+                if (item.getState() != OrderItemState.REJECTED &&
+                        item.getState() != OrderItemState.RETURNED) {
                     item.setState(OrderItemState.PAID);
                 }
             });

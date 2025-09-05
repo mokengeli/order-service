@@ -27,4 +27,7 @@ public interface DishRepository extends JpaRepository<Dish, Long> {
             String tenantCode, Long categoryId);
 
     Page<Dish> findByTenantCodeAndNameContainingIgnoreCase(String tenantCode, String search, Pageable pageable);
+
+    List<Dish> findByNameContainingIgnoreCaseAndTenantCode(String name, String tenantCode);
+
 }

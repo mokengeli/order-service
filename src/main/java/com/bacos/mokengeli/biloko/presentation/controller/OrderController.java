@@ -71,65 +71,8 @@ public class OrderController {
 
     }
 
-    /**
-     * @param id: orderItem to reject
-     */
-    @PreAuthorize("hasAuthority('REJECT_DISH')")
-    @PutMapping("/dish/reject")
-    public void rejectDish(@RequestParam("id") Long id) {
-        try {
-            orderService.changeOrderItemState(id, OrderItemState.REJECTED);
 
-        } catch (ServiceException e) {
-            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
-        }
-    }
 
-    /**
-     * to mark item ready means has been cooked
-     *
-     * @param id: id of orderItem to cook
-     */
-    @PreAuthorize("hasAuthority('COOK_DISH')")
-    @PutMapping("/dish/ready")
-    public void prepareOrderItem(@RequestParam("id") Long id) {
-        try {
-            orderService.changeOrderItemState(id, OrderItemState.READY);
-
-        } catch (ServiceException e) {
-            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
-        }
-    }
-
-    /**
-     * the dish has been served to the client
-     *
-     * @param id: orderItem to reject
-     */
-    @PreAuthorize("hasAuthority('SERVE_DISH')")
-    @PutMapping("/dish/served")
-    public void servedDish(@RequestParam("id") Long id) {
-        try {
-            orderService.changeOrderItemState(id, OrderItemState.SERVED);
-
-        } catch (ServiceException e) {
-            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
-        }
-    }
-
-    /**
-     * @param id: orderItem to reject
-     */
-    @PreAuthorize("hasAuthority('REGISTER_PAY_DISH')")
-    @PutMapping("/dish/paid")
-    public void paidDish(@RequestParam("id") Long id) {
-        try {
-            orderService.changeOrderItemState(id, OrderItemState.PAID);
-
-        } catch (ServiceException e) {
-            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
-        }
-    }
 
     @GetMapping("/active")
     public List<DomainOrder> getActiveOrdersByTable(@RequestParam("tableId") Long tableId) {
@@ -179,6 +122,16 @@ public class OrderController {
     ) {
         try {
             return orderService.processDebtValidation(req);
+        } catch (ServiceException e) {
+            throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
+        }
+    }
+
+    @PutMapping("/force-close")
+    public void closeOrder(@RequestParam("id") Long id) {
+        try {
+          this.orderService.forceCloseOrder(id);
+
         } catch (ServiceException e) {
             throw new ResponseStatusWrapperException(HttpStatus.BAD_REQUEST, e.getMessage(), e.getTechnicalId());
         }

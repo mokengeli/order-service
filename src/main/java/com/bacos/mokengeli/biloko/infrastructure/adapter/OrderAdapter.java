@@ -16,6 +16,7 @@ import com.bacos.mokengeli.biloko.infrastructure.model.Currency;
 import com.bacos.mokengeli.biloko.infrastructure.repository.*;
 import com.bacos.mokengeli.biloko.infrastructure.repository.proxy.UserProxy;
 import jakarta.transaction.Transactional;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -78,20 +79,23 @@ public class OrderAdapter implements OrderPort {
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No currency found with id " + createOrder.getCurrencyId()));
         RefTable refTable = this.refTableRepository.findById(createOrder.getTableId())
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(), "No Ref table found with the id " + createOrder.getTableId()));
-
+        String requesterEmployeeNumber = this.getRequesterEmployeeNumber(createOrder.getRegisteredBy());
         Order order = Order.builder()
+                .orderNumber(createOrder.getOrderNumber())
                 .refTable(refTable)
                 .totalPrice(0.0)
                 .currency(currency)
                 .paidAmount(0.0)
                 .paymentStatus(OrderPaymentStatus.UNPAID)
                 .tenant(tenant)
+                .registeredBy(requesterEmployeeNumber)
                 .createdAt(OffsetDateTime.now())
                 .build();
         createAndSetOrderItems(order, currency, createOrder.getOrderItems());
         order = this.orderRepository.save(order);
-
-        return Optional.of(OrderMapper.toDomain(order));
+        DomainOrder domainOrder = OrderMapper.toDomain(order);
+        domainOrder.setWaiterName(this.getRequesterName(createOrder.getRegisteredBy()));
+        return Optional.of(domainOrder);
     }
 
     @Override
@@ -123,11 +127,13 @@ public class OrderAdapter implements OrderPort {
             Order key = entry.getKey();
             List<OrderItem> value = entry.getValue();
             DomainOrder domainOrderWithoutItem = OrderMapper.toDomainOrderWithoutItem(key);
+            domainOrderWithoutItem.setWaiterName(this.getRequesterName(domainOrderWithoutItem.getWaiterIdentifier()));
             List<DomainOrder.DomainOrderItem> orderItems = new ArrayList<>();
             for (OrderItem orderItem : value) {
                 DomainOrder.DomainOrderItem ligthDomainOrderItem = OrderMapper.toDomainOrderItem(orderItem);
                 orderItems.add(ligthDomainOrderItem);
             }
+
             domainOrderWithoutItem.setItems(orderItems);
             domainOrderWithoutItem.sortItemsByCategoryPriority();
             list.add(domainOrderWithoutItem);
@@ -232,7 +238,11 @@ public class OrderAdapter implements OrderPort {
         List<Order> orders = this.orderRepository
                 .findActiveOrdersByRefTableId(refTableId);
         return orders.stream()
-                .map(OrderMapper::toDomain)
+                .map(x -> {
+                    DomainOrder domainOrder = OrderMapper.toDomain(x);
+                    domainOrder.setWaiterName(this.getRequesterName(domainOrder.getWaiterIdentifier()));
+                    return domainOrder;
+                })
                 .toList();
     }
 
@@ -269,7 +279,9 @@ public class OrderAdapter implements OrderPort {
             return Optional.empty();
         }
         Order order = optionalOrder.get();
-        return Optional.of(OrderMapper.toDomain(order));
+        DomainOrder domainOrder = OrderMapper.toDomain(order);
+        domainOrder.setWaiterName(this.getRequesterName(domainOrder.getWaiterIdentifier()));
+        return Optional.of(domainOrder);
     }
 
     private void createAndSetOrderItems(Order order, Currency currency, List<CreateOrderItem> orderItems) throws ServiceException {
@@ -305,13 +317,13 @@ public class OrderAdapter implements OrderPort {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                         "No Order found with id = " + orderId));
-
+        String requesterEmployeeNumber = this.getRequesterEmployeeNumber(employeeNumber);
         // Créer la transaction de paiement
         PaymentTransaction payment = PaymentTransaction.builder()
                 .order(order)
                 .amount(amount)
                 .paymentMethod(paymentMethod)
-                .employeeNumber(employeeNumber)
+                .employeeNumber(requesterEmployeeNumber)
                 .notes(notes)
                 .createdAt(OffsetDateTime.now())
                 .isRefund(false)
@@ -345,13 +357,13 @@ public class OrderAdapter implements OrderPort {
                         "No Payment found with id = " + paymentId));
 
         Order order = payment.getOrder();
-
+        String requesterEmployeeNumber = this.getRequesterEmployeeNumber(employeeNumber);
         // Créer une transaction de remboursement
         PaymentTransaction refund = PaymentTransaction.builder()
                 .order(order)
                 .amount(-payment.getAmount()) // Montant négatif pour un remboursement
                 .paymentMethod(payment.getPaymentMethod())
-                .employeeNumber(employeeNumber)
+                .employeeNumber(requesterEmployeeNumber)
                 .notes("Refund for payment #" + paymentId + ": " + reason)
                 .createdAt(OffsetDateTime.now())
                 .isRefund(true)
@@ -393,7 +405,9 @@ public class OrderAdapter implements OrderPort {
         Order order = this.orderRepository.findByItemId(orderItemId)
                 .orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                         "No Order found with id = " + orderItemId));
-        return Optional.of(OrderMapper.toDomain(order));
+        DomainOrder domainOrder = OrderMapper.toDomain(order);
+        domainOrder.setWaiterName(this.getRequesterName(domainOrder.getWaiterIdentifier()));
+        return Optional.of(domainOrder);
     }
 
     @Override
@@ -489,13 +503,23 @@ public class OrderAdapter implements OrderPort {
                 .build();
         financialLossRepository.save(loss);
 
-        // Notification de changement de statut de table
-        /** ws.notifyTableStatus(tenantCode, new TableStatusNotification(
-         order.getTable().getId(), TableStatus.FREE, order.getId()
-         ));*/
-        this.orderNotificationService.notifyStateChange(order.getId(), order.getRefTable().getId(),
-                OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE, OrderItemState.SERVED.name(), OrderItemState.SERVED.name(),
-                TableState.FREE.name());
+        // Notification de clôture avec dette
+        this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
+                OrderNotification.OrderNotificationStatus.ORDER_CLOSED_WITH_DEBT,
+                order.getPaymentStatus().name(),
+                OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE.name(),
+                TableState.FREE.name(),
+                "Commande clôturée avec impayé" + (validationRequired ? " - Validation requise" : ""),
+                validationRequestId);
+
+        // Notification de validation requise si applicable
+        /**  if (validationRequired && validationRequestId != null) {
+         this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
+         OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_REQUIRED,
+         "PENDING", "VALIDATION_REQUIRED", TableState.FREE.name(),
+         "Validation de dette requise pour cette commande",
+         validationRequestId);
+         }*/
 
         return DomainCloseOrderWithDebt.builder()
                 .message("Commande clôturée avec impayé")
@@ -512,6 +536,7 @@ public class OrderAdapter implements OrderPort {
         domainOrder.setPaymentStatus(order.getPaymentStatus());
         domainOrder.setPaidAmount(order.getPaidAmount());
         domainOrder.setRemainingAmount(order.getRemainingAmount());
+        domainOrder.setWaiterName(this.getRequesterName(domainOrder.getWaiterIdentifier()));
 
         // Mapper les transactions de paiement
         if (order.getPayments() != null) {
@@ -526,12 +551,13 @@ public class OrderAdapter implements OrderPort {
 
     // Méthode helper pour mapper une PaymentTransaction en DomainPaymentTransaction
     private DomainOrder.DomainPaymentTransaction paymentToDomain(PaymentTransaction payment) {
+        String requesterEmployeeNumber = this.getRequesterEmployeeNumber(payment.getEmployeeNumber());
         return DomainOrder.DomainPaymentTransaction.builder()
                 .id(payment.getId())
                 .amount(payment.getAmount())
                 .paymentMethod(payment.getPaymentMethod())
                 .createdAt(payment.getCreatedAt())
-                .employeeNumber(payment.getEmployeeNumber())
+                .employeeNumber(requesterEmployeeNumber)
                 .notes(payment.getNotes())
                 .isRefund(payment.getIsRefund())
                 .discountAmount(payment.getDiscountAmount())
@@ -570,11 +596,24 @@ public class OrderAdapter implements OrderPort {
         }).collect(Collectors.toList());
     }
 
-    private String getRequesterName(String identifier) {
+    public String getRequesterName(String identifier) {
+        if (Strings.isEmpty(identifier))
+            return "";
         Optional<DomainUser> domainUserOptional = this.userProxy.getUserByIdentifier(identifier);
         if (domainUserOptional.isPresent()) {
             DomainUser domainUser = domainUserOptional.get();
             return domainUser.getFirstName() + " " + domainUser.getLastName();
+        }
+        return "";
+    }
+
+    public String getRequesterEmployeeNumber(String identifier) {
+        if (Strings.isEmpty(identifier))
+            return "";
+        Optional<DomainUser> domainUserOptional = this.userProxy.getUserByIdentifier(identifier);
+        if (domainUserOptional.isPresent()) {
+            DomainUser domainUser = domainUserOptional.get();
+            return domainUser.getEmployeeNumber();
         }
         return "";
     }
@@ -621,10 +660,14 @@ public class OrderAdapter implements OrderPort {
             loss.setCreatedBy(domainUser.getEmployeeNumber());
             loss.setCreatedAt(OffsetDateTime.now());
             financialLossRepository.save(loss);
-            // notifier serveur
-            /**   ws.sendToUser(order.getRequestedBy().getId(), new DebtValidationResponseNotification(
-             true, order.getId(), "Votre demande a été approuvée"
-             ));*/
+
+            // Notification de validation approuvée
+            this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
+                    OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_APPROVED,
+                    "VALIDATION_PENDING", "VALIDATION_APPROVED",
+                    TableState.FREE.name(),
+                    "Votre demande de validation de dette a été approuvée",
+                    req.getDebtValidationId());
         } else {
             // refus
             if (req.getRejectionReason() == null) {
@@ -639,17 +682,14 @@ public class OrderAdapter implements OrderPort {
             order.setPaymentStatus(OrderPaymentStatus.UNPAID);
 
             orderRepository.save(order);
-            // notifier serveur
-            /**  ws.sendToUser(order.getRequestedBy().getId(), new DebtValidationResponseNotification(
-             false, order.getId(), "Votre demande a été refusée"
-             ));
-             // notifier table status
-             ws.sendToTenant(tenantCode, new TableStatusNotification(
-             order.getTable().getId(), TableStatus.OCCUPIED, order.getId()
-             ));*/
-            this.orderNotificationService.notifyStateChange(order.getId(), order.getRefTable().getId(),
-                    OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE, OrderItemState.SERVED.name(), OrderItemState.SERVED.name(),
-                    TableState.OCCUPIED.name());
+
+            // Notification de validation refusée
+            this.orderNotificationService.notifyDebtValidation(order.getId(), order.getRefTable().getId(),
+                    OrderNotification.OrderNotificationStatus.DEBT_VALIDATION_REJECTED,
+                    "VALIDATION_PENDING", "VALIDATION_REJECTED",
+                    TableState.OCCUPIED.name(),
+                    "Votre demande de validation de dette a été refusée",
+                    req.getDebtValidationId());
         }
         return new DomainValidateDebtValidation(
                 "Validation processed successfully", req.isApproved()
@@ -665,10 +705,14 @@ public class OrderAdapter implements OrderPort {
 
     @Override
     @Transactional
-    public void rejectOrderItem(Long orderItemId) throws ServiceException {
+    public void rejectOrReturnOrderItem(Long orderItemId, OrderItemState orderItemState) throws ServiceException {
         OrderItem orderItem = this.orderItemRepository.findById(orderItemId).orElseThrow(() -> new ServiceException(UUID.randomUUID().toString(),
                 "No OrderItem found with id " + orderItemId));
-        orderItem.setState(OrderItemState.REJECTED);
+        if (!OrderItemState.RETURNED.equals(orderItemState)
+                && !OrderItemState.REJECTED.equals(orderItemState)) {
+            throw new ServiceException(UUID.randomUUID().toString(), "Invalid OrderItemState");
+        }
+        orderItem.setState(orderItemState);
 
         Order order = orderItem.getOrder();
         Double totalPrice = order.getTotalPrice();
@@ -676,5 +720,16 @@ public class OrderAdapter implements OrderPort {
         Double adjustedTotalPrice = totalPrice - unitPrice > 0 ? totalPrice - unitPrice : 0;
         order.setTotalPrice(adjustedTotalPrice);
         this.orderItemRepository.save(orderItem);
+    }
+
+    @Override
+    public void forceCloseOrder(Long orderId) {
+        Optional<Order> optionalOrder = this.orderRepository.findById(orderId);
+        if (optionalOrder.isEmpty()) {
+            return;
+        }
+        Order order = optionalOrder.get();
+        order.setPaymentStatus(OrderPaymentStatus.FORCED_CLOSED);
+        this.orderRepository.save(order);
     }
 }

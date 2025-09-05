@@ -115,6 +115,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findAllByCreatedAtBetweenAndTenantCode(OffsetDateTime start, OffsetDateTime end, String tenantCode);
 
+    List<Order> findByCreatedAtBetweenAndTenantCodeAndPaymentStatusIn(
+            OffsetDateTime start, 
+            OffsetDateTime end, 
+            String tenantCode, 
+            Collection<OrderPaymentStatus> paymentStatuses
+    );
+
     @Query("""
         SELECT
           o.paymentStatus AS status,

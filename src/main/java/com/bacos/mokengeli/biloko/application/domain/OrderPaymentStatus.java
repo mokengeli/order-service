@@ -8,12 +8,16 @@ public enum OrderPaymentStatus {
     FULLY_PAID,          // Tous les items sont payés au prix complet
     PAID_WITH_DISCOUNT,  // Payée avec une remise
     PAID_WITH_REJECTED_ITEM, // Payée malgré certains items rejetés
+    PAID_WITH_RETURNED_ITEM,
+    FORCED_CLOSED,
     CLOSED_WITH_DEBT;
 
     public static List<OrderPaymentStatus> getAllPaidStatus() {
         return List.of(OrderPaymentStatus.FULLY_PAID,
                 OrderPaymentStatus.PAID_WITH_DISCOUNT,
                 OrderPaymentStatus.PAID_WITH_REJECTED_ITEM,
+                OrderPaymentStatus.PAID_WITH_RETURNED_ITEM,
+                OrderPaymentStatus.FORCED_CLOSED,
                 OrderPaymentStatus.CLOSED_WITH_DEBT);
     }
 }

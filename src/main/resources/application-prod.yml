@@ -1,6 +1,5 @@
 server:
   port: ${SERVER_PORT:0}
-
 spring:
   application:
     name: order-service
@@ -10,12 +9,12 @@ spring:
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: ${HIKARI-MAX-POOL-SIZE}
-      minimum-idle: ${HIKARI-MIN-IDLE}
-      idle-timeout: ${HIKARI-IDLE-TIMEOUT}
-      connection-timeout: ${HIKARI-CONNECTION-TIMEOUT}
-      max-lifetime: ${HIKARI-MAX-LIFETIME}
-      leak-detection-threshold: ${HIKARI_LEAK_DETECTION}
+      maximum-pool-size: ${HIKARI_MAX_POOL_SIZE:3}
+      minimum-idle: ${HIKARI_MIN_IDLE:1}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT:300000}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT:20000}
+      max-lifetime: ${HIKARI_MAX_LIFETIME:1800000}
+      leak-detection-threshold: ${HIKARI_LEAK_DETECTION:60000}
   jpa:
     properties:
       hibernate:
@@ -24,14 +23,12 @@ spring:
           time_zone: ${TIME_ZONE:Europe/Paris}
   jackson:
     time-zone: ${TIME_ZONE:Europe/Paris}
-
 security:
   cors:
     allowed-origins: ${ALLOWED_ORIGINS}
   jwt:
     secret: ${JWT_SECRET}
   is-ssl: ${IS_SSL}
-
 eureka:
   client:
     service-url:
@@ -41,21 +38,31 @@ eureka:
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${random.uuid}
-
+    metadata-map:
+      socketio-port: ${SOCKETIO_PORT:9092}
 management:
   endpoint:
     websocket:
       enabled: true
+    socketio:
+      enabled: true
   endpoints:
     web:
       exposure:
-        include: ${ACTUATOR_ENDPOINTS:health,info,metrics,websocket,loggers}
-
+        include: ${ACTUATOR_ENDPOINTS:health,info,metrics,websocket,socketio,loggers}
 user:
   service-id: ${USER_SERVICE_ID:user-service}
 inventory:
   service-id: ${INVENTORY_SERVICE_ID:inventory-service}
-
 logging:
   level:
     com.bacos.mokengeli.biloko: ${LOG_LEVEL}
+    com.corundumstudio.socketio: ${SOCKETIO_LOG_LEVEL:INFO}
+    io.netty: ${NETTY_LOG_LEVEL:WARN}
+socketio:
+  port: ${SOCKETIO_PORT:9092}
+  hostname: ${SOCKETIO_HOSTNAME:0.0.0.0}
+  ping-interval: ${SOCKETIO_PING_INTERVAL:30000}
+  ping-timeout: ${SOCKETIO_PING_TIMEOUT:60000}
+  max-frame-payload-length: ${SOCKETIO_MAX_FRAME_PAYLOAD_LENGTH:65536}
+  max-http-content-length: ${SOCKETIO_MAX_HTTP_CONTENT_LENGTH:65536}

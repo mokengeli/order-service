@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,4 +23,6 @@ public interface RefTableRepository extends JpaRepository<RefTable, Long> {
      * Récupération conditionnelle par ID et tenantCode.
      */
     Optional<RefTable> findByIdAndTenantCode(Long id, String tenantCode);
+
+    List<RefTable> findByNameContainingIgnoreCaseAndTenantCode(String name, String tenantCode);
 }

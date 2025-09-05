@@ -221,5 +221,36 @@ public class DashboardService {
         }
         return dashboardPort.getOrderCountByPaymentStatus(start, end, tenantCode);
     }
+
+    public DomainDailyDishReport getDailyDishReport(
+            LocalDate date,
+            String tenantCode
+    ) throws ServiceException {
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get the getDailyDishReport of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardPort.getDailyDishReport(date, tenantCode);
+    }
+
+    public DomainWaiterPerformanceReport getWaiterPerformance(
+            LocalDate startDate,
+            LocalDate endDate,
+            String tenantCode
+    ) throws ServiceException {
+        ConnectedUser connectedUser = userAppService.getConnectedUser();
+        if (!userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get the getWaiterPerformance of another tenant: {}", uuid,
+                    connectedUser.getEmployeeNumber(), connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "Accès refusé pour ce tenant");
+        }
+        return dashboardPort.getWaiterPerformance(startDate, endDate, tenantCode);
+    }
 }
 

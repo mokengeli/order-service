@@ -196,4 +196,14 @@ public class DishAdapter implements DishPort {
                 .collect(Collectors.toList());
         return Optional.of(domains);
     }
+
+    @Override
+    public List<DomainDish> getDishesByName(String name, String tenantCode) {
+        List<Dish> dishes = dishRepository.findByNameContainingIgnoreCaseAndTenantCode(name, tenantCode);
+        if (dishes == null || dishes.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return dishes.stream().map(DishMapper::toDomain).toList();
+    }
 }

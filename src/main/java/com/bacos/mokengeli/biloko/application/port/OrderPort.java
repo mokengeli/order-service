@@ -79,5 +79,7 @@ public interface OrderPort {
 
     String getDebtValidationTenantCode(Long debtValidationId);
 
-    void rejectOrderItem(Long orderItemId) throws ServiceException;
+    void rejectOrReturnOrderItem(Long orderItemId, OrderItemState orderItemState) throws ServiceException;
+
+    void forceCloseOrder(Long orderId);
 }

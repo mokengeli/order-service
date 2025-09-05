@@ -126,4 +126,17 @@ public class DishService {
                 categroyId);
         return domainDishes.orElse(Collections.emptyList());
     }
+
+    public List<DomainDish> getDishesByName(String name, String tenantCode) throws ServiceException {
+        ConnectedUser connectedUser = this.userAppService.getConnectedUser();
+        if (!this.userAppService.isAdminUser() &&
+                !connectedUser.getTenantCode().equals(tenantCode)) {
+            String uuid = UUID.randomUUID().toString();
+            log.error("[{}]: User [{}] Tenant [{}] try to get dishes of another tenant: {}",
+                    uuid, connectedUser.getEmployeeNumber(),
+                    connectedUser.getTenantCode(), tenantCode);
+            throw new ServiceException(uuid, "You don't have permission to get dishes");
+        }
+        return dishPort.getDishesByName(name, tenantCode );
+    }
 }

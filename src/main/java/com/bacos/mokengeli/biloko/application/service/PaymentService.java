@@ -52,24 +52,22 @@ public class PaymentService {
             DomainOrder domainOrder = order.get();
             OrderPaymentStatus paymentStatus = domainOrder.getPaymentStatus();
 
-            boolean tableFree = this.orderPort.isTableFree(domainOrder.getTableId());
-            TableState tableState = TableState.OCCUPIED;
-            if (tableFree) {
-                tableState = TableState.FREE;
-            }
 
             // si on est pas dans un etat necessitant un paiement cela signifie que la commande
             // a deja été réglé
             // on notifie quand meme
             if (!OrderPaymentStatus.PARTIALLY_PAID.equals(paymentStatus)
                     && !OrderPaymentStatus.UNPAID.equals(paymentStatus)) {
+                boolean isTableFree = this.orderPort.isTableFree(domainOrder.getTableId());
+                String tableStateStr = isTableFree ? "FREE" : "OCCUPIED";
+                
                 this.orderNotificationService.notifyStateChange(
                         orderId,
                         domainOrder.getTableId(),
                         OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE,
                         paymentStatus.name(),
                         paymentStatus.name(),
-                        tableState.name(),
+                        tableStateStr,
                         "No payment register because already fully paid."
                 );
                 return domainOrder;
@@ -85,13 +83,16 @@ public class PaymentService {
             );
 
             // Notifier du changement de statut de paiement
+            boolean isTableFree = this.orderPort.isTableFree(domainOrder.getTableId());
+            String tableStateStr = isTableFree ? "FREE" : "OCCUPIED";
+            
             this.orderNotificationService.notifyStateChange(
                     orderId,
                     domainOrder.getTableId(),
                     OrderNotification.OrderNotificationStatus.PAYMENT_UPDATE,
                     paymentStatus.name(),
-                    tableState.name(),
-                    updatedOrder.getPaymentStatus().name()
+                    updatedOrder.getPaymentStatus().name(),
+                    tableStateStr
             );
 
             return updatedOrder;
