@@ -5,6 +5,7 @@ import com.bacos.mokengeli.biloko.application.domain.OrderItemState;
 import com.bacos.mokengeli.biloko.application.domain.OrderPaymentStatus;
 import com.bacos.mokengeli.biloko.application.exception.ServiceException;
 import com.bacos.mokengeli.biloko.application.port.CashierPort;
+import com.bacos.mokengeli.biloko.infrastructure.model.Currency;
 import com.bacos.mokengeli.biloko.infrastructure.model.Order;
 import com.bacos.mokengeli.biloko.infrastructure.model.OrderItem;
 import com.bacos.mokengeli.biloko.infrastructure.repository.OrderRepository;
@@ -15,10 +16,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,10 +32,10 @@ public class CashierAdapter implements CashierPort {
 
     @Override
     public DomainCashierOrderSummary getCashierOrderSummary(
-            LocalDate date, 
-            String searchType, 
+            LocalDate date,
+            String searchType,
             String search,
-            String status, 
+            String status,
             String tenantCode
     ) throws ServiceException {
         try {
@@ -65,8 +63,8 @@ public class CashierAdapter implements CashierPort {
                         ))
                         .values()
                         .stream()
-                        .filter(optional -> optional.isPresent())
-                        .map(optional -> optional.get())
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
                         .collect(Collectors.toList());
             }
 
@@ -74,11 +72,20 @@ public class CashierAdapter implements CashierPort {
             double totalRevenue = cashierOrders.stream()
                     .mapToDouble(DomainCashierOrderSummary.DomainCashierOrder::getPaidAmount)
                     .sum();
+            String currencyCode = "";
+            String currencyLabel = "";
+            if (orders != null && !orders.isEmpty()) {
+                Currency currency = orders.getFirst().getCurrency();
+                currencyLabel = currency.getLabel();
+                currencyCode = currency.getCode();
+            }
 
             return DomainCashierOrderSummary.builder()
                     .date(date.toString())
                     .totalOrders(totalOrders)
                     .totalRevenue(totalRevenue)
+                    .currencyCode(currencyCode)
+                    .currencyLabel(currencyLabel)
                     .orders(cashierOrders)
                     .build();
 
@@ -128,13 +135,13 @@ public class CashierAdapter implements CashierPort {
         if ("TABLE".equals(searchType)) {
             // Search by table name (case insensitive, starts with)
             return orders.stream()
-                    .filter(order -> order.getTableName() != null && 
+                    .filter(order -> order.getTableName() != null &&
                             order.getTableName().toLowerCase().startsWith(search.trim().toLowerCase()))
                     .collect(Collectors.toList());
         } else if ("ORDER".equals(searchType)) {
             // Search by order number (new robust system)
             return orders.stream()
-                    .filter(order -> order.getOrderNumber() != null && 
+                    .filter(order -> order.getOrderNumber() != null &&
                             order.getOrderNumber().startsWith(search.trim()))
                     .collect(Collectors.toList());
         }
@@ -150,16 +157,16 @@ public class CashierAdapter implements CashierPort {
                         .collect(Collectors.toList());
             case "PENDING":
                 return orders.stream()
-                        .filter(order -> order.getPaymentStatus() == OrderPaymentStatus.UNPAID || 
+                        .filter(order -> order.getPaymentStatus() == OrderPaymentStatus.UNPAID ||
                                 order.getPaymentStatus() == OrderPaymentStatus.PARTIALLY_PAID)
                         .collect(Collectors.toList());
             case "READY":
                 return orders.stream()
                         .filter(order -> !OrderPaymentStatus.getAllPaidStatus().contains(order.getPaymentStatus()) &&
-                                order.getItems().stream().anyMatch(item -> 
-                                        item.getState() == OrderItemState.READY || 
-                                        item.getState() == OrderItemState.COOKED || 
-                                        item.getState() == OrderItemState.SERVED))
+                                order.getItems().stream().anyMatch(item ->
+                                        item.getState() == OrderItemState.READY ||
+                                                item.getState() == OrderItemState.COOKED ||
+                                                item.getState() == OrderItemState.SERVED))
                         .collect(Collectors.toList());
             case "ALL":
             default:
@@ -168,38 +175,34 @@ public class CashierAdapter implements CashierPort {
     }
 
     private List<Order> getOrdersByStatusFilter(
-            OffsetDateTime start, 
-            OffsetDateTime end, 
-            String tenantCode, 
+            OffsetDateTime start,
+            OffsetDateTime end,
+            String tenantCode,
             String status
     ) {
-        switch (status) {
-            case "PAID":
-                return orderRepository.findByCreatedAtBetweenAndTenantCodeAndPaymentStatusIn(
-                        start, end, tenantCode, OrderPaymentStatus.getAllPaidStatus()
-                );
-            case "PENDING":
-                return orderRepository.findByCreatedAtBetweenAndTenantCodeAndPaymentStatusIn(
-                        start, end, tenantCode, List.of(OrderPaymentStatus.UNPAID, OrderPaymentStatus.PARTIALLY_PAID)
-                );
-            case "READY":
+        return switch (status) {
+            case "PAID" -> orderRepository.findByCreatedAtBetweenAndTenantCodeAndPaymentStatusIn(
+                    start, end, tenantCode, OrderPaymentStatus.getAllPaidStatus()
+            );
+            case "PENDING" -> orderRepository.findByCreatedAtBetweenAndTenantCodeAndPaymentStatusIn(
+                    start, end, tenantCode, List.of(OrderPaymentStatus.UNPAID, OrderPaymentStatus.PARTIALLY_PAID)
+            );
+            case "READY" ->
                 // Orders with at least one item ready to be paid (READY, COOKED, or SERVED) and not fully paid
-                return orderRepository.findByCreatedAtBetweenAndTenantCode(start, end, tenantCode)
-                        .stream()
-                        .filter(order -> !OrderPaymentStatus.getAllPaidStatus().contains(order.getPaymentStatus()) &&
-                                order.getItems().stream().anyMatch(item -> 
-                                        item.getState() == OrderItemState.READY || 
-                                        item.getState() == OrderItemState.COOKED || 
-                                        item.getState() == OrderItemState.SERVED))
-                        .collect(Collectors.toList());
-            case "ALL":
-            default:
-                return orderRepository.findByCreatedAtBetweenAndTenantCode(start, end, tenantCode);
-        }
+                    orderRepository.findByCreatedAtBetweenAndTenantCode(start, end, tenantCode)
+                            .stream()
+                            .filter(order -> !OrderPaymentStatus.getAllPaidStatus().contains(order.getPaymentStatus()) &&
+                                    order.getItems().stream().anyMatch(item ->
+                                            item.getState() == OrderItemState.READY ||
+                                                    item.getState() == OrderItemState.COOKED ||
+                                                    item.getState() == OrderItemState.SERVED))
+                            .collect(Collectors.toList());
+            default -> orderRepository.findByCreatedAtBetweenAndTenantCode(start, end, tenantCode);
+        };
     }
 
     private DomainCashierOrderSummary.DomainCashierOrder mapToDomainCashierOrder(Order order) {
-        DomainCashierOrderSummary.DomainCashierOrder.DomainDishesStatus dishesStatus = 
+        DomainCashierOrderSummary.DomainCashierOrder.DomainDishesStatus dishesStatus =
                 calculateDishesStatus(order.getItems());
 
         String orderStatus = determineOrderStatus(order, dishesStatus);
@@ -212,6 +215,8 @@ public class CashierAdapter implements CashierPort {
                 .tableName(order.getRefTable() != null ? order.getRefTable().getName() : "N/A")
                 .totalAmount(order.getTotalPrice())
                 .paidAmount(order.getPaidAmount())
+                .currencyCode(order.getCurrency().getCode())
+                .currencyLabel(order.getCurrency().getLabel())
                 .remainingAmount(order.getRemainingAmount())
                 .status(orderStatus)
                 .createdAt(order.getCreatedAt())
@@ -230,7 +235,7 @@ public class CashierAdapter implements CashierPort {
         int ready = statusCounts.getOrDefault(OrderItemState.READY, 0L).intValue();
         // IN_PREPARATION and PENDING are considered as "in progress"
         int inProgress = statusCounts.getOrDefault(OrderItemState.IN_PREPARATION, 0L).intValue() +
-                        statusCounts.getOrDefault(OrderItemState.PENDING, 0L).intValue();
+                statusCounts.getOrDefault(OrderItemState.PENDING, 0L).intValue();
         int served = statusCounts.getOrDefault(OrderItemState.SERVED, 0L).intValue();
 
         return DomainCashierOrderSummary.DomainCashierOrder.DomainDishesStatus.builder()
@@ -242,38 +247,31 @@ public class CashierAdapter implements CashierPort {
     }
 
     private String determineOrderStatus(
-            Order order, 
+            Order order,
             DomainCashierOrderSummary.DomainCashierOrder.DomainDishesStatus dishesStatus
     ) {
         // Return the specific payment status rather than just "paid"
         if (OrderPaymentStatus.getAllPaidStatus().contains(order.getPaymentStatus())) {
             return mapPaymentStatusToString(order.getPaymentStatus());
         }
-        
+
         if (dishesStatus.getReady() > 0 && dishesStatus.getReady() == dishesStatus.getTotal()) {
             return "ready";
         }
-        
+
         return "pending";
     }
 
     private String mapPaymentStatusToString(OrderPaymentStatus paymentStatus) {
-        switch (paymentStatus) {
-            case FULLY_PAID:
-                return "paid";
-            case PAID_WITH_DISCOUNT:
-                return "paid_with_discount";
-            case PAID_WITH_REJECTED_ITEM:
-                return "paid_with_rejected_item";
-            case PAID_WITH_RETURNED_ITEM:
-                return "paid_with_returned_item";
-            case FORCED_CLOSED:
-                return "forced_closed";
-            case CLOSED_WITH_DEBT:
-                return "closed_with_debt";
-            default:
-                return "pending";
-        }
+        return switch (paymentStatus) {
+            case FULLY_PAID -> "paid";
+            case PAID_WITH_DISCOUNT -> "paid_with_discount";
+            case PAID_WITH_REJECTED_ITEM -> "paid_with_rejected_item";
+            case PAID_WITH_RETURNED_ITEM -> "paid_with_returned_item";
+            case FORCED_CLOSED -> "forced_closed";
+            case CLOSED_WITH_DEBT -> "closed_with_debt";
+            default -> "pending";
+        };
     }
 
     private int calculateWaitingTime(Order order) {

@@ -13,6 +13,8 @@ public class DomainCashierOrderSummary {
     private int totalOrders;
     private double totalRevenue;
     private List<DomainCashierOrder> orders;
+    private String currencyCode;
+    private String currencyLabel;
 
     @Builder
     @Data
@@ -24,6 +26,8 @@ public class DomainCashierOrderSummary {
         private double totalAmount;
         private double paidAmount;
         private double remainingAmount;
+        private String currencyCode;
+        private String currencyLabel;
         private String status;
         private OffsetDateTime createdAt;
         private DomainDishesStatus dishesStatus;
