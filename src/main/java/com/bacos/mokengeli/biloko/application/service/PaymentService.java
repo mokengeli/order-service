@@ -52,11 +52,6 @@ public class PaymentService {
             DomainOrder domainOrder = order.get();
             OrderPaymentStatus paymentStatus = domainOrder.getPaymentStatus();
 
-            boolean tableFree = this.orderPort.isTableFree(domainOrder.getTableId());
-            TableState tableState = TableState.OCCUPIED;
-            if (tableFree) {
-                tableState = TableState.FREE;
-            }
 
             // si on est pas dans un etat necessitant un paiement cela signifie que la commande
             // a deja été réglé
